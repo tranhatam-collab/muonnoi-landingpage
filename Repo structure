@@ -1,0 +1,30 @@
+muonnoi/
+├─ functions/
+│  ├─ api/
+│  │  ├─ auth/
+│  │  │  ├─ request.ts
+│  │  │  ├─ callback.ts
+│  │  │  ├─ me.ts
+│  │  │  └─ logout.ts
+│  │  ├─ admin/
+│  │  │  ├─ users.ts
+│  │  │  └─ domains.ts
+│  │  ├─ posts/
+│  │  │  ├─ create.ts
+│  │  │  ├─ list.ts
+│  │  │  └─ flag.ts
+│  │  └─ upload/
+│  │     └─ put.ts
+│  ├─ _middleware.ts
+│  └─ types.d.ts
+├─ public/
+│  ├─ app.css
+│  ├─ app.js
+│  └─ logo.svg
+├─ scripts/
+│  └─ schema.sql
+├─ index.html
+├─ app.html
+├─ admin.html
+├─ wrangler.toml
+└─ README.md
