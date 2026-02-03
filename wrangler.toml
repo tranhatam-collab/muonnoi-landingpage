@@ -1,0 +1,26 @@
+name = "muonnoi"
+compatibility_date = "2026-02-03"
+
+# Cloudflare Pages will pick up /functions automatically.
+# This file is still useful for local dev with wrangler pages dev.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "muonnoi_db"
+database_id = "muon-noi-landingpage"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "muonnoi_uploads"
+
+[vars]
+APP_ORIGIN = "https://muonnoi.org"
+APP_NAME_VI = "Muôn Nói"
+APP_NAME_EN = "Muon Noi"
+SESSION_COOKIE = "mn_session"
+
+# Required secrets (set in Cloudflare dashboard as Secrets, not here):
+# AUTH_SECRET
+# RESEND_API_KEY
+# MAIL_FROM
+# ADMIN_EMAILS (comma-separated)
