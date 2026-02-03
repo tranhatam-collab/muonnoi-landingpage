@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Muôn Nói · App</title>
+  <link rel="stylesheet" href="/public/app.css">
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <h1 id="appName">Muôn Nói</h1>
+          <div class="small" id="appSub"></div>
+        </div>
+      </div>
+      <div class="nav">
+        <button class="pill" id="langBtn">VI</button>
+        <a class="pill" href="/admin.html">Admin</a>
+        <a class="pill" href="/">Home</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 id="authTitle">Access</h2>
+        <div id="authBox"></div>
+        <div class="hr"></div>
+        <h2 id="composeTitle"></h2>
+        <div id="composer"></div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="align-items:center;justify-content:space-between">
+          <h2 id="feedTitle"></h2>
+          <button class="pill" id="loadMoreBtn"></button>
+        </div>
+        <div id="feed"></div>
+        <div class="footer">No algorithm · No infinite scroll · Proof-first · Privacy-first</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/public/app.js"></script>
+</body>
+</html>
