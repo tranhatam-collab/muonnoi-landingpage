@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Muôn Nói · Admin</title>
+  <link rel="stylesheet" href="/public/app.css">
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <h1>Admin</h1>
+          <div class="small">Duyệt user + quản domain intelligence.</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a class="pill" href="/app.html">App</a>
+        <a class="pill" href="/">Home</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Users</h2>
+        <button class="btn" id="loadUsers">Load</button>
+        <div class="hr"></div>
+        <div id="users"></div>
+      </div>
+
+      <div class="card">
+        <h2>Domains</h2>
+        <div class="row">
+          <input id="domain" placeholder="example.com" />
+          <select id="dstatus">
+            <option value="trusted">trusted</option>
+            <option value="neutral" selected>neutral</option>
+            <option value="harmful">harmful</option>
+          </select>
+        </div>
+        <div style="height:10px"></div>
+        <input id="dnote" placeholder="note (optional)" />
+        <div style="height:10px"></div>
+        <button class="btn" id="saveDomain">Save</button>
+        <div class="hr"></div>
+        <button class="btn secondary" id="loadDomains">Load list</button>
+        <div class="hr"></div>
+        <div id="domains"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, opts){
+      const r = await fetch(`/functions/api/${path}`, opts);
+      const j = await r.json().catch(()=>({ok:false}));
+      if (!r.ok || !j.ok) throw new Error(j.message || "Request failed");
+      return j;
+    }
+
+    document.getElementById("loadUsers").onclick = async () => {
+      const r = await api("admin/users", { method:"GET" });
+      const box = document.getElementById("users");
+      box.innerHTML = "";
+      for (const u of r.items){
+        box.innerHTML += `
+          <div class="post">
+            <div class="meta"><div>${u.email}</div><div><span class="badge">${u.status}</span></div></div>
+            <div class="small">created: ${new Date(u.created_at).toLocaleString()}</div>
+            <div style="height:10px"></div>
+            <div class="row">
+              <button class="btn secondary" onclick="setStatus('${u.id}','pending')">pending</button>
+              <button class="btn" onclick="setStatus('${u.id}','approved')">approved</button>
+              <button class="btn secondary" onclick="setStatus('${u.id}','blocked')">blocked</button>
+            </div>
+          </div>
+        `;
+      }
+    };
+
+    window.setStatus = async (id, status) => {
+      await api("admin/users", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id, status }) });
+      alert("OK");
+    };
+
+    document.getElementById("saveDomain").onclick = async () => {
+      const domain = document.getElementById("domain").value.trim();
+      const status = document.getElementById("dstatus").value;
+      const note = document.getElementById("dnote").value.trim();
+      await api("admin/domains", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ domain, status, note }) });
+      alert("OK");
+    };
+
+    document.getElementById("loadDomains").onclick = async () => {
+      const r = await api("admin/domains", { method:"GET" });
+      const box = document.getElementById("domains");
+      box.innerHTML = "";
+      for (const d of r.items){
+        box.innerHTML += `<div class="post"><div class="meta"><div>${d.domain}</div><div><span class="badge">${d.status}</span></div></div><div class="small">${d.note||""}</div></div>`;
+      }
+    };
+  </script>
+</body>
+</html>
