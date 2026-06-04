@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Không mê cung nào giống nhau. Mỗi lối ra mở ra mê cung lớn hơn — vô tận."/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Mê Cung Muôn Lối · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+  <style>
+    .dpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:12px auto 0}
+    .dpad button{padding:14px 0;font-size:18px}
+    .dpad .sp{visibility:hidden}
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Mê Cung Muôn Lối</b></div>
+    </div>
+
+    <div class="hud">
+      <div class="stat"><div class="k">Mê cung</div><div class="v" id="hLevel">1</div></div>
+      <div class="stat"><div class="k">Điểm</div><div class="v" id="hScore">0</div></div>
+      <div class="stat"><div class="k">Thời gian</div><div class="v" id="hTime">--</div></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="cv" width="360" height="360"></canvas>
+      <div class="overlay" id="overlay">
+        <h2 id="ovTitle">Mê Cung Muôn Lối</h2>
+        <p class="small" id="ovText">
+          Đưa chấm tím <b>tới ô vàng</b> trước khi hết giờ. Mỗi lối ra mở ra một mê cung
+          <b>lớn hơn</b>. Mê cung <b>không bao giờ kết thúc</b> — bạn đi được bao xa?
+        </p>
+        <div class="note" id="ovBest"></div>
+        <button class="btn" id="startBtn">Bắt đầu</button>
+        <div class="small" id="ovAuth"></div>
+      </div>
+    </div>
+
+    <div class="dpad">
+      <button class="btn secondary sp"></button>
+      <button class="btn secondary" data-d="up">▲</button>
+      <button class="btn secondary sp"></button>
+      <button class="btn secondary" data-d="left">◀</button>
+      <button class="btn secondary sp"></button>
+      <button class="btn secondary" data-d="right">▶</button>
+      <button class="btn secondary sp"></button>
+      <button class="btn secondary" data-d="down">▼</button>
+      <button class="btn secondary sp"></button>
+    </div>
+    <div class="small" style="text-align:center;margin-top:8px">Phím mũi tên / WASD · vuốt · hoặc nút trên</div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+  const GAME_ID = 'me-cung-muon-loi';
+  const FREE = 4; // lượt chơi miễn phí trước khi cần đăng ký
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const $ = id => document.getElementById(id);
+  function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1200); }
+
+  let best = { level:0, score:0 };
+  let G = null, raf = 0;
+
+  // ----- maze gen (recursive backtracker) -----
+  function genMaze(n){
+    // mỗi ô có 4 tường: top,right,bottom,left
+    const cell = i => ({ v:false, w:[true,true,true,true] });
+    const cells = Array.from({length:n*n}, cell);
+    const idx = (x,y)=> y*n+x;
+    const stack = [];
+    let cur = 0; cells[cur].v = true; let visited = 1;
+    const DX=[0,1,0,-1], DY=[-1,0,1,0]; // up,right,down,left
+    while (visited < n*n){
+      const x = cur % n, y = (cur/n)|0;
+      const nb = [];
+      for (let d=0; d<4; d++){
+        const nx=x+DX[d], ny=y+DY[d];
+        if (nx>=0&&nx<n&&ny>=0&&ny<n && !cells[idx(nx,ny)].v) nb.push([d,idx(nx,ny)]);
+      }
+      if (nb.length){
+        const [d,ni] = nb[(Math.random()*nb.length)|0];
+        cells[cur].w[d] = false;
+        cells[ni].w[(d+2)%4] = false;
+        stack.push(cur); cur = ni; cells[cur].v = true; visited++;
+      } else cur = stack.pop();
+    }
+    return { n, cells };
+  }
+
+  function levelParams(lvl){
+    const n = Math.min(6 + Math.floor((lvl-1)/2), 22);   // kích thước lớn dần
+    const time = Math.max(8, 14 + n*0.8);                 // giây cho mê cung này
+    const fog = lvl >= 6;                                  // sương mù từ level 6
+    return { n, time, fog };
+  }
+
+  function newLevel(lvl){
+    const p = levelParams(lvl);
+    return {
+      level: lvl, maze: genMaze(p.n), n: p.n, fog: p.fog,
+      px: 0, py: 0, ex: p.n-1, ey: p.n-1,
+      timeLeft: p.time, total: p.time,
+    };
+  }
+
+  async function startGame(){
+    const gate = await MNPlays.beginPlay(GAME_ID, FREE);
+    if (!gate.allowed) return;
+    cancelAnimationFrame(raf);
+    G = { running:true, score:0, level:1, lvl:newLevel(1), last:performance.now() };
+    $('overlay').classList.add('hidden');
+    MNPlays.saveProgress(GAME_ID, { status:'playing', level:1, score:0 });
+    hud(); G.last = performance.now(); raf = requestAnimationFrame(loop);
+  }
+
+  function loop(now){
+    if (!G || !G.running) return;
+    const dt = Math.min(50, now - G.last)/1000; G.last = now;
+    G.lvl.timeLeft -= dt;
+    if (G.lvl.timeLeft <= 0){ G.lvl.timeLeft = 0; draw(); return gameOver(); }
+    hud(); draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function cellSize(){ return Math.floor(Math.min(W,H) / G.lvl.n); }
+  function origin(){ const s=cellSize(); return { ox:(W - s*G.lvl.n)/2, oy:(H - s*G.lvl.n)/2, s }; }
+
+  function move(dir){
+    if (!G || !G.running) return;
+    const L = G.lvl, n = L.n, i = L.py*n + L.px;
+    const w = L.maze.cells[i].w; // up,right,down,left
+    let nx=L.px, ny=L.py;
+    if (dir==='up' && !w[0]) ny--;
+    else if (dir==='right' && !w[1]) nx++;
+    else if (dir==='down' && !w[2]) ny++;
+    else if (dir==='left' && !w[3]) nx--;
+    else return; // có tường
+    L.px=nx; L.py=ny;
+    if (nx===L.ex && ny===L.ey) return reachExit();
+    draw();
+  }
+
+  function reachExit(){
+    const bonus = Math.ceil(G.lvl.timeLeft);
+    G.score += 50 + G.level*10 + bonus*2;
+    G.level++;
+    toast('Lối ra! +' + (50+ (G.level-1)*10 + bonus*2) + ' · Mê cung lớn hơn ⬇');
+    const carry = Math.min(G.lvl.timeLeft, 5); // mang theo chút thời gian
+    G.lvl = newLevel(G.level);
+    G.lvl.timeLeft += carry; G.lvl.total += carry;
+    MNPlays.saveProgress(GAME_ID, { status:'playing', level:G.level, score:G.score });
+    hud(); draw();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const L = G.lvl, n=L.n; const {ox,oy,s} = origin();
+    // exit cell
+    ctx.fillStyle = 'rgba(255,214,10,.16)';
+    ctx.fillRect(ox+L.ex*s, oy+L.ey*s, s, s);
+
+    // fog: chỉ hiện vùng quanh người chơi
+    const reveal = (x,y)=>{
+      if (!L.fog) return true;
+      const d = Math.abs(x-L.px)+Math.abs(y-L.py);
+      return d <= 2 || (x===L.ex&&y===L.ey);
+    };
+
+    ctx.strokeStyle = '#3a3f4b'; ctx.lineWidth = 2; ctx.lineCap='round';
+    for (let y=0;y<n;y++) for (let x=0;x<n;x++){
+      if (!reveal(x,y)) { // vẽ ô tối
+        ctx.fillStyle='rgba(255,255,255,.02)'; ctx.fillRect(ox+x*s,oy+y*s,s,s); continue;
+      }
+      const w = L.maze.cells[y*n+x].w;
+      const X=ox+x*s, Y=oy+y*s;
+      ctx.beginPath();
+      if (w[0]){ ctx.moveTo(X,Y); ctx.lineTo(X+s,Y); }
+      if (w[1]){ ctx.moveTo(X+s,Y); ctx.lineTo(X+s,Y+s); }
+      if (w[2]){ ctx.moveTo(X+s,Y+s); ctx.lineTo(X,Y+s); }
+      if (w[3]){ ctx.moveTo(X,Y+s); ctx.lineTo(X,Y); }
+      ctx.stroke();
+    }
+    // exit flag
+    if (reveal(L.ex,L.ey)){
+      ctx.fillStyle='#ffd60a'; ctx.font = (s*0.6)+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('★', ox+L.ex*s+s/2, oy+L.ey*s+s/2+1);
+    }
+    // player
+    const cx=ox+L.px*s+s/2, cy=oy+L.py*s+s/2;
+    const grad = ctx.createRadialGradient(cx,cy,1,cx,cy,s*0.4);
+    grad.addColorStop(0,'#a98bff'); grad.addColorStop(1,'#7c5cff');
+    ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(cx,cy,s*0.32,0,Math.PI*2); ctx.fill();
+
+    // time bar
+    const tb = (G.lvl.timeLeft/G.lvl.total);
+    ctx.fillStyle = tb>0.3?'#22d3ee':'#ff453a';
+    ctx.fillRect(0, H-4, W*tb, 4);
+  }
+
+  function hud(){
+    $('hLevel').textContent = G.level;
+    $('hScore').textContent = G.score;
+    $('hTime').textContent = Math.ceil(G.lvl.timeLeft) + 's';
+  }
+
+  async function gameOver(){
+    G.running=false; cancelAnimationFrame(raf);
+    const bl=Math.max(best.level,G.level), bs=Math.max(best.score,G.score);
+    const isPB = G.score>best.score; best={level:bl,score:bs};
+    await MNPlays.saveProgress(GAME_ID,{status:'played',level:bl,score:bs});
+    const pts = Math.floor(G.score/8) + G.level*3;
+    const res = await MNPlays.awardPoints(GAME_ID, pts, 'me-cung');
+    $('ovTitle').textContent = isPB? 'Kỷ lục mới! 🎉':'Hết giờ';
+    $('ovText').innerHTML = `Bạn vượt <b>${G.level-1}</b> mê cung · <b>${G.score} điểm</b>.<br/>`
+      + (res?`Nhận <b>+${pts} Muôn Điểm</b>${res.guest?' (tạm)':''}.`:'')
+      + `<br/><span class="small">Mê cung luôn còn lối tiếp theo. Hẹn gặp ở tầng sâu hơn.</span>`;
+    $('ovBest').textContent = `Kỷ lục: tới mê cung ${best.level} · ${best.score} điểm`;
+    $('startBtn').textContent='Chơi lại'; $('overlay').classList.remove('hidden'); refreshAuthLine();
+  }
+
+  // ----- controls -----
+  document.querySelectorAll('.dpad button[data-d]').forEach(b=> b.onclick=()=>move(b.dataset.d));
+  window.addEventListener('keydown', e=>{
+    const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
+    if (m[e.key]){ e.preventDefault(); move(m[e.key]); }
+  });
+  // swipe
+  let sx=0, sy=0;
+  cv.addEventListener('pointerdown', e=>{ sx=e.clientX; sy=e.clientY; });
+  cv.addEventListener('pointerup', e=>{
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    if (Math.abs(dx)<18 && Math.abs(dy)<18) return;
+    if (Math.abs(dx)>Math.abs(dy)) move(dx>0?'right':'left'); else move(dy>0?'down':'up');
+  });
+
+  $('startBtn').onclick = startGame;
+  function refreshAuthLine(){
+    $('ovAuth').innerHTML = MNPlays.isLoggedIn()
+      ? '✓ Tiến trình & điểm được lưu vào tài khoản.'
+      : '<a href="'+MNPlays.loginUrl()+'" style="color:var(--brand2)">Đăng nhập</a> để lưu tiến trình & nhận Muôn Điểm.';
+  }
+  (async ()=>{
+    await MNPlays.init();
+    const p = await MNPlays.loadProgress(GAME_ID);
+    if (p) best={level:p.level||0, score:p.score||0};
+    if (best.score) $('ovBest').textContent = `Kỷ lục: tới mê cung ${best.level} · ${best.score} điểm`;
+    refreshAuthLine();
+    G = { running:false, score:0, level:1, lvl:newLevel(1), last:0 }; draw();
+  })();
+  </script>
+</body>
+</html>

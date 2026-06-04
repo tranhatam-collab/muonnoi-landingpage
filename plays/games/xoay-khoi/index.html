@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Xoay các khối để tạo đường đi.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xoay Khoi — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #puzzle-board { display: grid; gap: 4px; margin: 1rem auto; max-width: 320px; touch-action: none; }
+  .p-cell { aspect-ratio: 1; border-radius: 6px; background: #1f2937; border: 1px solid #374151; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s; user-select: none; }
+  .p-cell.fixed { background: #374151; color: #9ca3af; cursor: default; }
+  .p-cell.rotating { transform: rotate(90deg); }
+  .p-cell.path { background: #10b98133; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="xoay-khoi">
+
+<div id="hud-root"></div>
+<div id="puzzle-board"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Xoay Khoi</h1>
+    <p>Xoay các khối để tạo đường đi từ góc trên trai đến góc dưới phai.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'xoay-khoi';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Xoay Khoi', desc: 'Moi ô có một doan duong. Nhan để xoay ô 90 do. Noi các doan thanh duong di lien mach.' },
+      { title: 'Giới hạn thời gian', desc: 'Ban có 30 giây cho mỗi me cung. Càng về sau, me cung càng lớn va phức tạp.' },
+      { title: 'Vô hạn', desc: 'Sang me cung mỗi sáu khi hoan thanh. Khong bao giờ het!' },
+    ],
+    en: [
+      { title: 'Block Spin', desc: 'Each cell has a path segment. Tap to rotate 90 degrees. Connect segments into a continuous path.' },
+      { title: 'Time Limit', desc: 'You have 30 seconds per maze. Later mazes are larger and more complex.' },
+      { title: 'Endless', desc: 'New maze after each completion. Never runs out!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('puzzle-board');
+  let size = 3, score = 0, level = 1, timeLeft = 30, isPlaying = false, timerInterval = null;
+  let grid = [];
+
+  // Pipe types: 0=straight| , 1=straight- , 2=corner L , 3=corner J , 4=corner 7 , 5=corner r
+  // Connections: [top,right,bottom,left]
+  const PIPES = [
+    { conn: [1,0,1,0], char: '┃' },
+    { conn: [0,1,0,1], char: '━' },
+    { conn: [1,1,0,0], char: '┗' },
+    { conn: [1,0,0,1], char: '┛' },
+    { conn: [0,1,1,0], char: '┏' },
+    { conn: [0,0,1,1], char: '┓' },
+  ];
+
+  function randPipe() { return { ...PIPES[Math.floor(Math.random() * PIPES.length)], rot: Math.floor(Math.random() * 4) }; }
+  function rotate(p) { const c = p.conn; return { conn: [c[3], c[0], c[1], c[2]], char: p.char, rot: (p.rot + 1) % 4 }; }
+
+  function genGrid(n) {
+    const g = [];
+    for (let y = 0; y < n; y++) { const row = []; for (let x = 0; x < n; x++) row.push(randPipe()); g.push(row); }
+    // Ensure start and end are fixed path
+    g[0][0] = { conn: [0,1,1,0], char: '┏', rot: 0 };
+    g[n-1][n-1] = { conn: [1,0,0,1], char: '┛', rot: 0 };
+    return g;
+  }
+
+  function build() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const cell = document.createElement('div');
+        cell.className = 'p-cell' + ((x===0&&y===0)||(x===size-1&&y===size-1)?' fixed':'');
+        cell.textContent = grid[y][x].char;
+        cell.dataset.x = x; cell.dataset.y = y;
+        cell.addEventListener('pointerdown', () => onTap(x, y));
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  function onTap(x, y) {
+    if (!isPlaying || (x===0&&y===0) || (x===size-1&&y===size-1)) return;
+    grid[y][x] = rotate(grid[y][x]);
+    const cell = board.children[y * size + x];
+    cell.textContent = grid[y][x].char;
+    cell.classList.add('rotating');
+    setTimeout(() => cell.classList.remove('rotating'), 200);
+    if (checkPath()) completeLevel();
+  }
+
+  function checkPath() {
+    // Simple DFS from (0,0) to (n-1,n-1)
+    const visited = new Set();
+    const stack = [{x:0,y:0}];
+    while (stack.length) {
+      const {x,y} = stack.pop();
+      if (x === size-1 && y === size-1) return true;
+      const key = x+','+y; if (visited.has(key)) continue; visited.add(key);
+      const c = grid[y][x].conn;
+      if (c[0] && y > 0 && grid[y-1][x].conn[2]) stack.push({x,y:y-1});
+      if (c[1] && x < size-1 && grid[y][x+1].conn[3]) stack.push({x:x+1,y});
+      if (c[2] && y < size-1 && grid[y+1][x].conn[0]) stack.push({x,y:y+1});
+      if (c[3] && x > 0 && grid[y][x-1].conn[1]) stack.push({x:x-1,y});
+    }
+    return false;
+  }
+
+  function completeLevel() {
+    score += Math.max(10, timeLeft * 2);
+    hud.setScore(score); level++; size = Math.min(size + 1, 7);
+    timeLeft = Math.max(15, 35 - level * 2);
+    grid = genGrid(size); build(); hud.setLevel(level);
+  }
+
+  function tick() {
+    timeLeft--;
+    if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    size = 3; score = 0; level = 1; timeLeft = 30; isPlaying = true;
+    grid = genGrid(size); build(); hud.setScore(0); hud.setLevel(1);
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

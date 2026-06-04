@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Điền số vào lưới 4x4 sao cho mỗi hàng, cột và vùng có đủ 1-4.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sudoku Mini</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .sudoku-grid { display:grid; grid-template-columns:repeat(4, 60px); grid-template-rows:repeat(4, 60px); gap:2px; background:#475569; padding:4px; border-radius:0.375rem; margin-bottom:0.75rem; }
+  .sudoku-cell { background:#334155; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold; cursor:pointer; user-select:none; transition:background 0.2s; }
+  .sudoku-cell.fixed { color:#94a3b8; cursor:default; }
+  .sudoku-cell.selected { background:#3b82f6; }
+  .sudoku-cell.error { background:#ef4444; }
+  .sudoku-cell:nth-child(2), .sudoku-cell:nth-child(3), .sudoku-cell:nth-child(6), .sudoku-cell:nth-child(7), .sudoku-cell:nth-child(10), .sudoku-cell:nth-child(11), .sudoku-cell:nth-child(14), .sudoku-cell:nth-child(15) { border-right:2px solid #475569; }
+  .sudoku-cell:nth-child(n+9) { border-top:2px solid #475569; }
+  .num-pad { display:flex; gap:0.5rem; }
+  .num-btn { width:48px; height:48px; background:#334155; border:none; border-radius:0.375rem; color:#e2e8f0; font-size:1.25rem; cursor:pointer; }
+  .num-btn:active { background:#475569; }
+</style>
+</head>
+<body data-game="sudoku-mini">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="sudoku-grid" id="sudoku-grid"></div>
+  <div class="num-pad">
+    <button class="num-btn" data-num="1">1</button>
+    <button class="num-btn" data-num="2">2</button>
+    <button class="num-btn" data-num="3">3</button>
+    <button class="num-btn" data-num="4">4</button>
+  </div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Sudoku Mini</h1>
+    <p>Điền số 1-4 vào lưới 4x4. Mỗi hàng, cột và vùng 2x2 chỉ có một lần mỗi số.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'sudoku-mini';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Sudoku Mini', desc: 'Lưới 4x4 được chia thành 4 vùng 2x2.' },
+      { title: 'Quy tắc', desc: 'Mỗi hàng, cột và vùng 2x2 phải có đủ số 1-4, không trùng.' },
+      { title: 'Cách chơi', desc: 'Chạm ô trống rồi chọn số 1-4 bên dưới. Điền đúng hết để qua màn.' },
+    ],
+    en: [
+      { title: 'Sudoku Mini', desc: 'A 4x4 grid divided into four 2x2 regions.' },
+      { title: 'Rules', desc: 'Each row, column and 2x2 region must contain 1-4 with no repeats.' },
+      { title: 'How to play', desc: 'Tap an empty cell then pick a number 1-4 below. Fill all correctly to pass.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('sudoku-grid');
+
+  let board = [], fixed = [], selectedIdx = -1, score = 0, level = 1, isPlaying = false, lives = 3;
+
+  function generateBoard() {
+    const base = [1,2,3,4];
+    const rows = [];
+    for (let r = 0; r < 4; r++) {
+      const row = [];
+      for (let c = 0; c < 4; c++) {
+        const val = ((base[c] + r) % 4) + 1;
+        row.push(val);
+      }
+      rows.push(row);
+    }
+    // Shuffle rows within bands and cols within stacks
+    for (let i = 0; i < 2; i++) {
+      const a = Math.floor(Math.random() * 2) + i * 2;
+      const b = Math.floor(Math.random() * 2) + i * 2;
+      [rows[a], rows[b]] = [rows[b], rows[a]];
+    }
+    // Flatten
+    const flat = rows.flat();
+    // Remove cells based on level
+    const blanks = Math.min(8 + level, 14);
+    const idxs = Array.from({ length: 16 }, (_, i) => i);
+    for (let i = idxs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idxs[i], idxs[j]] = [idxs[j], idxs[i]]; }
+    fixed = new Array(16).fill(true);
+    for (let i = 0; i < blanks; i++) fixed[idxs[i]] = false;
+    board = flat.map((v, i) => fixed[i] ? v : 0);
+  }
+
+  function isValid(board, idx, num) {
+    const r = Math.floor(idx / 4), c = idx % 4;
+    for (let i = 0; i < 4; i++) {
+      if (board[r * 4 + i] === num && (r * 4 + i) !== idx) return false;
+      if (board[i * 4 + c] === num && (i * 4 + c) !== idx) return false;
+    }
+    const br = Math.floor(r / 2) * 2, bc = Math.floor(c / 2) * 2;
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+      const bi = (br + i) * 4 + (bc + j);
+      if (bi !== idx && board[bi] === num) return false;
+    }
+    return true;
+  }
+
+  function isComplete() {
+    for (let i = 0; i < 16; i++) if (board[i] === 0) return false;
+    return true;
+  }
+
+  function render() {
+    gridEl.innerHTML = '';
+    for (let i = 0; i < 16; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'sudoku-cell' + (fixed[i] ? ' fixed' : '') + (i === selectedIdx ? ' selected' : '');
+      cell.textContent = board[i] || '';
+      cell.addEventListener('click', () => { if (!fixed[i]) { selectedIdx = i; render(); } });
+      gridEl.appendChild(cell);
+    }
+  }
+
+  function startLevel() {
+    generateBoard();
+    selectedIdx = -1;
+    render();
+    hud.setLevel(level);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true; lives = 3;
+    hud.setScore(0); hud.setLevel(1);
+    startLevel();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!isPlaying || selectedIdx < 0 || fixed[selectedIdx]) return;
+      const num = parseInt(btn.dataset.num);
+      if (!isValid(board, selectedIdx, num)) {
+        lives--;
+        const cells = gridEl.children;
+        cells[selectedIdx].classList.add('error');
+        setTimeout(() => cells[selectedIdx].classList.remove('error'), 300);
+        if (lives <= 0) { endGame(); return; }
+        return;
+      }
+      board[selectedIdx] = num;
+      render();
+      if (isComplete()) {
+        score += level * 50;
+        hud.setScore(score);
+        level++;
+        setTimeout(startLevel, 500);
+      }
+    });
+  });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

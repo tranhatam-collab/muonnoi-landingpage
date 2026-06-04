@@ -1,0 +1,26 @@
+name: Deploy plays.muonnoi.org
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plays/**'
+      - '.github/workflows/deploy-plays.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy to Cloudflare Pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLF_ID_KEY }}
+          command: pages deploy plays/ --project-name=plays-muonnoi --branch=main

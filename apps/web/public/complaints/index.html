@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="theme-color" content="#0a0f14"/>
+  <meta name="robots" content="index,follow,max-image-preview:large"/>
+  <title>Khiếu nại | Muôn Nơi</title>
+  <meta name="description" content="Kênh khiếu nại và phản ánh của Muôn Nơi để xử lý abuse minh bạch, có mã theo dõi và quy trình rõ ràng."/>
+  <link rel="canonical" href="https://www.muonnoi.org/complaints/"/>
+  <link rel="stylesheet" href="/assets/ui.css?v=1.0.1"/>
+</head>
+<body class="mn-body">
+  <div class="mn-bg" aria-hidden="true">
+    <div class="mn-bg__grid"></div>
+    <div class="mn-bg__glow mn-bg__glow--1"></div>
+    <div class="mn-bg__glow mn-bg__glow--2"></div>
+    <div class="mn-bg__noise"></div>
+  </div>
+
+  <header class="mn-topbar" role="banner">
+    <div class="mn-shell mn-topbar__inner">
+      <a class="mn-brand" href="/" data-route="/">
+        <span class="mn-brand__mark">MN</span>
+        <span class="mn-brand__text">
+          <span class="mn-brand__name">Muôn Nơi</span>
+          <span class="mn-brand__sub">Trust Layer</span>
+        </span>
+      </a>
+      <nav class="mn-mainNav" aria-label="Điều hướng chính">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+      </nav>
+      <div class="mn-topbar__actions">
+        <button class="mn-iconBtn" type="button" id="btnTheme" aria-label="Đổi giao diện"><span id="themeIcon">◐</span></button>
+        <button class="mn-langBtn" type="button" id="btnLang" aria-label="Đổi ngôn ngữ"><span id="langLabel">Tiếng Việt</span></button>
+        <a class="mn-btn mn-btn--primary" href="https://app.muonnoi.org/complaints/" rel="noopener">Mở complaints app</a>
+        <button class="mn-burger" id="mnBurger" type="button" aria-label="Mở menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mn-mobileMenu" id="mnMobileMenu" hidden>
+      <div class="mn-mobileMenu__links">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a href="/feed/" data-route="/feed/">Mở hệ</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="mn-page">
+    <section class="mn-homeSection">
+      <div class="mn-shell">
+        <div class="mn-sectionHead">
+          <h1 class="mn-h1">Khiếu nại và phản ánh</h1>
+          <p class="mn-sectionDesc">Gửi thông tin rõ ràng để hệ thống xử lý theo quy trình trust-first. Nếu cần luồng xử lý đầy đủ, dùng trang complaints trên app.</p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">B1</div>
+            <h3 class="mn-infoCard__title">Mô tả vụ việc</h3>
+            <p class="mn-infoCard__text">Nêu bối cảnh, link liên quan và tác động thực tế để giảm sai lệch khi review.</p>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">B2</div>
+            <h3 class="mn-infoCard__title">Nhận mã theo dõi</h3>
+            <p class="mn-infoCard__text">Sau khi gửi, bạn cần mã khiếu nại để theo dõi tiến độ và phản hồi bổ sung.</p>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">B3</div>
+            <h3 class="mn-infoCard__title">Review minh bạch</h3>
+            <p class="mn-infoCard__text">Trường hợp nghiêm trọng sẽ được chuyển verify/admin để xử lý theo lớp.</p>
+          </article>
+        </div>
+        <div style="height:14px;"></div>
+        <div class="mn-homeCTA">
+          <div class="mn-homeCTA__inner">
+            <div>
+              <h2 class="mn-h2">Đường dẫn xử lý chính</h2>
+              <p class="mn-sectionDesc">Trang này là lớp public overview. Luồng xử lý chi tiết ở app.muonnoi.org.</p>
+            </div>
+            <div class="mn-homeCTA__actions">
+              <a class="mn-btn mn-btn--primary" href="https://app.muonnoi.org/complaints/" rel="noopener">Mở complaints</a>
+              <a class="mn-btn mn-btn--ghost" href="https://app.muonnoi.org/security/" rel="noopener">Mở security</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mn-footer">
+    <div class="mn-shell mn-footer__inner">
+      <div class="mn-footer__brand">
+        <span class="mn-brand__mark mn-brand__mark--sm">MN</span>
+        <div>
+          <div class="mn-footer__name">Muôn Nơi</div>
+          <div class="mn-footer__tag">Social-first • privacy-first • module-first</div>
+        </div>
+      </div>
+      <div class="mn-footer__right">
+        <a class="mn-footer__link" href="/security/">Bảo mật</a>
+        <a class="mn-footer__link" href="/guide/">Hướng dẫn</a>
+        <a class="mn-footer__link" href="/roadmap/">Lộ trình</a>
+        <a class="mn-footer__link" href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a class="mn-footer__link" href="/investment/" data-route="/investment/">Đầu tư</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/ui.js?v=1.0.1" defer></script>
+</body>
+</html>

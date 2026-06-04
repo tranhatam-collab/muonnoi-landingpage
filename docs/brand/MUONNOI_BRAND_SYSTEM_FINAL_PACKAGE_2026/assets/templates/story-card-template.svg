@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" fill="none">
+<rect width="720" height="520" fill="#F5F1E8"/>
+<rect x="24" y="24" width="672" height="472" rx="16" fill="#FFFFFF" stroke="#E5E7EB"/>
+<rect x="48" y="48" width="220" height="220" rx="12" fill="#F3F4F6"/>
+<rect x="304" y="68" width="108" height="26" rx="13" fill="#D84315"/>
+<text x="336" y="86" font-family="Inter, Roboto, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Stage 3</text>
+<text x="304" y="144" font-family="Inter, Roboto, Arial, sans-serif" font-size="28" font-weight="700" fill="#0A0F14">Một hành trình đi xa</text>
+<text x="304" y="192" font-family="Inter, Roboto, Arial, sans-serif" font-size="16" fill="#0A0F14" opacity="0.82">Trích đoạn câu chuyện thật từ cộng đồng người Việt ở nhiều nơi, đọc chậm và đủ sâu.</text>
+<text x="304" y="242" font-family="Inter, Roboto, Arial, sans-serif" font-size="12" fill="#6B7280">Nguyễn A · Tokyo · 5 min read</text>
+<line x1="48" y1="310" x2="672" y2="310" stroke="#E5E7EB"/>
+<text x="48" y="358" font-family="Inter, Roboto, Arial, sans-serif" font-size="22" font-weight="700" fill="#0A0F14">Read Story</text>
+<text x="48" y="394" font-family="Inter, Roboto, Arial, sans-serif" font-size="14" fill="#0A0F14" opacity="0.72">Magazine-style story card template</text>
+</svg>

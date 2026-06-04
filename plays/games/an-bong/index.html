@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Bắt bóng với đúng màu.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>An Bong — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #catch-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #color-hint { text-align: center; font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="an-bong">
+
+<div id="hud-root"></div>
+<div id="color-hint">Bat bong <span style="color:#ef4444">DO</span></div>
+<canvas id="catch-canvas" width="320" height="320" aria-label="Catch canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>An Bong</h1>
+    <p>Bat bong đúng màu chi dinh. Bat nham mat mang!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'an-bong';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Ăn Bóng', desc: 'Các bóng sẽ rơi từ trên xuống. Chỉ bắt bóng có màu chỉ định trên màn hình. Bắt bóng khác màu sẽ mất mạng.' },
+      { title: 'Màu thay đổi', desc: 'Sau mỗi 5 bóng bắt được, màu chỉ định sẽ thay đổi. Tập trung!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Bóng rơi càng nhanh và càng nhiều màu khác nhau.' },
+    ],
+    en: [
+      { title: 'Ball Snap', desc: 'Balls fall from above. Only catch balls matching the shown color. Catching wrong color = lose life.' },
+      { title: 'Color Changes', desc: 'Every 5 catches, the target color changes. Stay focused!' },
+      { title: 'Endless', desc: 'No limit. Balls fall faster with more colors over time.' },
+    ],
+  };
+  const COLORS = [
+    { name: 'ĐỎ', en: 'RED', hex: '#ef4444' },
+    { name: 'XANH', en: 'BLUE', hex: '#3b82f6' },
+    { name: 'XANH LA', en: 'GREEN', hex: '#10b981' },
+    { name: 'VANG', en: 'YELLOW', hex: '#f59e0b' },
+    { name: 'TIM', en: 'PURPLE', hex: '#a855f7' },
+  ];
+  const canvas = document.getElementById('catch-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const hintEl = document.getElementById('color-hint');
+
+  let balls = [], score = 0, level = 1, lives = 3, isPlaying = false;
+  let targetColorIdx = 0, spawnMs = 1000, ballSpeed = 2, animId = null;
+  let spawnTimer = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function updateHint() {
+    const c = COLORS[targetColorIdx];
+    hintEl.innerHTML = (LANG === 'vi' ? 'Bat bong ' : 'Catch ') + `<span style="color:${c.hex}">${LANG === 'vi' ? c.name : c.en}</span>`;
+  }
+
+  function spawn() {
+    if (!isPlaying) return;
+    const r = 12 + Math.random() * 8;
+    const cIdx = Math.floor(Math.random() * COLORS.length);
+    balls.push({ x: r + Math.random() * (canvas.width - r * 2), y: -r, r, cIdx, speed: ballSpeed + Math.random() });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const b of balls) {
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS[b.cIdx].hex; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (const b of balls) { b.y += b.speed; }
+    balls = balls.filter(b => b.y < canvas.height + b.r);
+    draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    for (let i = balls.length - 1; i >= 0; i--) {
+      const b = balls[i];
+      const dx = x - b.x, dy = y - b.y;
+      if (dx * dx + dy * dy < b.r * b.r) {
+        balls.splice(i, 1);
+        if (b.cIdx === targetColorIdx) {
+          score += 10;
+          if (score % 50 === 0) { level++; targetColorIdx = (targetColorIdx + 1) % COLORS.length; updateHint(); spawnMs = Math.max(400, spawnMs * 0.92); ballSpeed += 0.3; hud.setLevel(level); }
+        } else { lives--; }
+        hud.setScore(score);
+        if (lives <= 0) endGame();
+        return;
+      }
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); balls = []; score = 0; level = 1; lives = 3; targetColorIdx = 0; spawnMs = 1000; ballSpeed = 2; isPlaying = true;
+    updateHint(); hud.setScore(0); hud.setLevel(1);
+    spawnTimer = setInterval(spawn, spawnMs);
+    update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId); clearInterval(spawnTimer);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

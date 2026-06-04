@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tìm chữ được yêu cầu trong bảng chữ cái xáo trộn.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tìm Chữ</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .letter-grid { display:grid; gap:0.375rem; margin-bottom:1rem; }
+  .letter-cell { width:50px; height:50px; background:#334155; border-radius:0.375rem; display:flex; align-items:center; justify-content:center; font-size:1.25rem; font-weight:bold; cursor:pointer; user-select:none; transition:background 0.2s; }
+  .letter-cell.correct { background:#22c55e; }
+  .letter-cell.wrong { background:#ef4444; }
+  .target { font-size:1.5rem; font-weight:bold; margin-bottom:0.5rem; color:#eab308; }
+  #timer-bar { width:100%; height:6px; background:#334155; border-radius:3px; margin-bottom:0.5rem; overflow:hidden; }
+  #timer-fill { height:100%; background:#22c55e; width:100%; transition:width 0.1s linear; }
+</style>
+</head>
+<body data-game="tim-chu">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div id="timer-bar"><div id="timer-fill"></div></div>
+  <div class="target" id="target">A</div>
+  <div class="letter-grid" id="letter-grid"></div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tìm Chữ</h1>
+    <p>Tìm chữ được yêu cầu trong bảng. Sai hoặc hết giờ là thua!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'tim-chu';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tìm Chữ', desc: 'Một chữ cái sẽ được yêu cầu. Tìm nó trong bảng chữ cái xáo trộn.' },
+      { title: 'Nhanh tay', desc: 'Mỗi màn có thời gian giới hạn. Càng nhanh càng nhiều điểm.' },
+      { title: 'Cẩn thận', desc: 'Chọn sai chữ sẽ bị trừ thời gian. Tập trung!' },
+    ],
+    en: [
+      { title: 'Word Search', desc: 'A letter is requested. Find it in the scrambled grid.' },
+      { title: 'Fast', desc: 'Each round has a time limit. Faster = more points.' },
+      { title: 'Careful', desc: 'Picking the wrong letter reduces time. Stay focused!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('letter-grid');
+  const targetEl = document.getElementById('target');
+  const timerFill = document.getElementById('timer-fill');
+
+  const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let score = 0, level = 1, isPlaying = false, timeLeft = 0, maxTime = 0, timerId = null;
+
+  function getConfig(lv) {
+    if (lv <= 2) return { cols: 3, time: 8 };
+    if (lv <= 4) return { cols: 4, time: 10 };
+    if (lv <= 6) return { cols: 5, time: 12 };
+    return { cols: 6, time: 15 };
+  }
+
+  function startLevel() {
+    const cfg = getConfig(level);
+    maxTime = cfg.time; timeLeft = cfg.time;
+    const target = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+    targetEl.textContent = target;
+    const count = cfg.cols * cfg.cols;
+    const arr = Array.from({ length: count }, () => LETTERS[Math.floor(Math.random() * LETTERS.length)]);
+    arr[Math.floor(Math.random() * count)] = target;
+    gridEl.style.gridTemplateColumns = `repeat(${cfg.cols}, 50px)`;
+    gridEl.innerHTML = '';
+    arr.forEach(ch => {
+      const cell = document.createElement('div');
+      cell.className = 'letter-cell';
+      cell.textContent = ch;
+      cell.addEventListener('click', () => {
+        if (!isPlaying) return;
+        if (ch === target) {
+          cell.classList.add('correct');
+          score += Math.floor(timeLeft * 10 + level * 5);
+          hud.setScore(score);
+          level++;
+          hud.setLevel(level);
+          setTimeout(startLevel, 300);
+        } else {
+          cell.classList.add('wrong');
+          timeLeft = Math.max(0, timeLeft - 2);
+          setTimeout(() => cell.classList.remove('wrong'), 300);
+        }
+      });
+      gridEl.appendChild(cell);
+    });
+    timerFill.style.width = '100%'; timerFill.style.background = '#22c55e';
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (!isPlaying) return;
+      timeLeft -= 0.1;
+      const pct = Math.max(0, timeLeft / maxTime * 100);
+      timerFill.style.width = pct + '%';
+      if (pct < 30) timerFill.style.background = '#ef4444';
+      else if (pct < 60) timerFill.style.background = '#eab308';
+      if (timeLeft <= 0) endGame();
+    }, 100);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    startLevel();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(timerId);
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

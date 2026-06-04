@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tìm hình khác biệt trong hai bức tranh. Càng nhanh càng tốt.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Phân Biệt Hình</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:400px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .shape-grid { display:grid; gap:0.5rem; margin-bottom:0.75rem; }
+  .shape-cell { width:60px; height:60px; background:#334155; border-radius:0.375rem; display:flex; align-items:center; justify-content:center; font-size:1.75rem; cursor:pointer; transition:background 0.2s; }
+  .shape-cell:hover { background:#475569; }
+  .label { font-size:0.875rem; color:#94a3b8; margin-bottom:0.25rem; }
+  #timer-bar { width:100%; height:6px; background:#334155; border-radius:3px; margin-bottom:0.5rem; overflow:hidden; }
+  #timer-fill { height:100%; background:#22c55e; width:100%; transition:width 0.1s linear; }
+</style>
+</head>
+<body data-game="phan-biet-hinh">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div id="timer-bar"><div id="timer-fill"></div></div>
+  <div class="label">Tìm ô khác biệt</div>
+  <div class="shape-grid" id="shape-grid"></div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Phân Biệt Hình</h1>
+    <p>Có 1 ô khác biệt trong lưới. Tìm nó càng nhanh càng tốt!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'phan-biet-hinh';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Phân Biệt Hình', desc: 'Một lưới các hình sẽ hiện ra. Chỉ có 1 ô khác biệt.' },
+      { title: 'Nhanh mắt', desc: 'Tìm và chạm vào ô khác biệt trước khi hết thời gian.' },
+      { title: 'Khó dần', desc: 'Càng về sau lưới càng lớn và các hình càng giống nhau.' },
+    ],
+    en: [
+      { title: 'Shape Match', desc: 'A grid of shapes will appear. Only 1 cell is different.' },
+      { title: 'Sharp Eye', desc: 'Find and tap the different cell before time runs out.' },
+      { title: 'Harder', desc: 'Later levels have bigger grids and more similar shapes.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('shape-grid');
+  const timerFill = document.getElementById('timer-fill');
+
+  const SHAPES = ['■','●','▲','◆','★','♦','♠','♥'];
+  let score = 0, level = 1, isPlaying = false, timeLeft = 0, maxTime = 0, timerId = null;
+
+  function getConfig(lv) {
+    if (lv <= 2) return { cols: 2, time: 5 };
+    if (lv <= 4) return { cols: 3, time: 7 };
+    if (lv <= 6) return { cols: 4, time: 10 };
+    return { cols: 5, time: 12 };
+  }
+
+  function startLevel() {
+    const cfg = getConfig(level);
+    maxTime = cfg.time; timeLeft = cfg.time;
+    const total = cfg.cols * cfg.cols;
+    const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    const oddShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    const oddIdx = Math.floor(Math.random() * total);
+    gridEl.style.gridTemplateColumns = `repeat(${cfg.cols}, 60px)`;
+    gridEl.innerHTML = '';
+
+    for (let i = 0; i < total; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'shape-cell';
+      cell.textContent = i === oddIdx ? oddShape : shape;
+      cell.addEventListener('click', () => {
+        if (!isPlaying) return;
+        if (i === oddIdx) {
+          cell.style.background = '#22c55e';
+          score += Math.floor(timeLeft * 10 + level * 5);
+          hud.setScore(score);
+          level++;
+          hud.setLevel(level);
+          setTimeout(startLevel, 300);
+        } else {
+          cell.style.background = '#ef4444';
+          setTimeout(endGame, 200);
+        }
+      });
+      gridEl.appendChild(cell);
+    }
+
+    timerFill.style.width = '100%'; timerFill.style.background = '#22c55e';
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (!isPlaying) return;
+      timeLeft -= 0.1;
+      const pct = Math.max(0, timeLeft / maxTime * 100);
+      timerFill.style.width = pct + '%';
+      if (pct < 30) timerFill.style.background = '#ef4444';
+      else if (pct < 60) timerFill.style.background = '#eab308';
+      if (timeLeft <= 0) endGame();
+    }, 100);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    startLevel();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(timerId);
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Đuổi theo mục tiêu chạy quanh màn hình. Chạm để bắt!">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Đuổi Bắt</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; height:400px; background:#1e293b; border-radius:0.5rem; position:relative; overflow:hidden; margin-bottom:1rem; }
+  canvas { display:block; width:100%; height:100%; }
+</style>
+</head>
+<body data-game="duoi-bat">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <canvas id="game-canvas" width="320" height="400"></canvas>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Đuổi Bắt</h1>
+    <p>Mục tiêu chạy quanh màn hình. Chạm để bắt! Càng nhanh càng khó!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'duoi-bat';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Đuổi Bắt', desc: 'Mục tiêu màu đỏ sẽ chạy quanh màn hình. Chạm vào để bắt.' },
+      { title: 'Nhanh dần', desc: 'Mỗi lần bắt được, mục tiêu chạy nhanh hơn và đổi hướng bất ngờ.' },
+      { title: 'Thoát', desc: 'Để mục tiêu thoát 3 lần là thua. Tập trung!' },
+    ],
+    en: [
+      { title: 'Chase', desc: 'The red target runs around the screen. Tap it to catch.' },
+      { title: 'Speed Up', desc: 'Each catch makes the target faster and more unpredictable.' },
+      { title: 'Escape', desc: 'Let the target escape 3 times and you lose. Stay focused!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let score = 0, level = 1, isPlaying = false;
+  let target = { x: 160, y: 200, r: 16, vx: 2, vy: 1.5 };
+  let escapes = 0, maxEscapes = 3, catchTimer = null;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Target
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🏃', target.x, target.y);
+    // Escapes left
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText((LANG === 'vi' ? 'Thoát: ' : 'Escapes: ') + escapes + '/' + maxEscapes, 10, 20);
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    target.x += target.vx;
+    target.y += target.vy;
+    if (target.x < target.r || target.x > canvas.width - target.r) target.vx *= -1;
+    if (target.y < target.r || target.y > canvas.height - target.r) target.vy *= -1;
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function catchTarget() {
+    score += 10 + level * 5;
+    hud.setScore(score);
+    level++;
+    hud.setLevel(level);
+    const speed = 2 + level * 0.4;
+    target.vx = (Math.random() < 0.5 ? -1 : 1) * speed * (0.8 + Math.random() * 0.4);
+    target.vy = (Math.random() < 0.5 ? -1 : 1) * speed * (0.8 + Math.random() * 0.4);
+    target.x = 40 + Math.random() * (canvas.width - 80);
+    target.y = 40 + Math.random() * (canvas.height - 80);
+    clearTimeout(catchTimer);
+    startEscapeTimer();
+  }
+
+  function startEscapeTimer() {
+    const time = Math.max(1500, 4000 - level * 200);
+    catchTimer = setTimeout(() => {
+      if (!isPlaying) return;
+      escapes++;
+      if (escapes >= maxEscapes) { endGame(); return; }
+      // Respawn elsewhere
+      target.x = 40 + Math.random() * (canvas.width - 80);
+      target.y = 40 + Math.random() * (canvas.height - 80);
+      startEscapeTimer();
+    }, time);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; escapes = 0; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    target = { x: 160, y: 200, r: 16, vx: 2, vy: 1.5 };
+    update();
+    startEscapeTimer();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearTimeout(catchTimer);
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height),
+    };
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (!isPlaying) return;
+    const p = getPos(e);
+    const dx = p.x - target.x, dy = p.y - target.y;
+    if (Math.sqrt(dx*dx + dy*dy) < target.r + 10) catchTarget();
+  });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

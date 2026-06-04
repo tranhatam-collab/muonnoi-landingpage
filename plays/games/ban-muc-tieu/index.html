@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Bắn các mục tiêu xuất hiện ngẫu nhiên.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ban Muc Tieu — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #target-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="ban-muc-tieu">
+
+<div id="hud-root"></div>
+<canvas id="target-canvas" width="320" height="320" aria-label="Target canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Ban Muc Tieu</h1>
+    <p>Ban cac muc tieu xuat hien ngẫu nhiên. Nhanh tay va chinh xac!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'ban-muc-tieu';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Bắn Mục Tiêu', desc: 'Các hình tròn sẽ xuất hiện ngẫu nhiên trên màn hình. Chạm vào tâm để bắn trúng. Chạm ngoài lề thì mất điểm.' },
+      { title: 'Tốc độ tăng', desc: 'Mục tiêu xuất hiện nhanh hơn và biến mất nhanh hơn. Càng về sau càng nhỏ.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Thử xem bạn bắn được bao nhiêu mục tiêu!' },
+    ],
+    en: [
+      { title: 'Target Shoot', desc: 'Circles appear randomly on screen. Tap the center to hit. Tap outside = miss.' },
+      { title: 'Speed Up', desc: 'Targets appear and disappear faster. Later targets are smaller.' },
+      { title: 'Endless', desc: 'No limit. See how many targets you can hit!' },
+    ],
+  };
+  const canvas = document.getElementById('target-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let targets = [], score = 0, level = 1, lives = 3, isPlaying = false;
+  let spawnMs = 1200, targetLife = 2000, targetR = 28, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function spawnTarget() {
+    if (!isPlaying) return;
+    const r = targetR;
+    targets.push({
+      x: r + Math.random() * (canvas.width - r * 2),
+      y: r + Math.random() * (canvas.height - r * 2),
+      r, born: Date.now(),
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const now = Date.now();
+    for (const t of targets) {
+      const age = now - t.born;
+      const alpha = Math.max(0, 1 - age / targetLife);
+      ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(239,68,68,${alpha})`; ctx.fill();
+      ctx.strokeStyle = `rgba(251,191,36,${alpha})`; ctx.lineWidth = 3; ctx.stroke();
+      // Rings
+      ctx.beginPath(); ctx.arc(t.x, t.y, t.r * 0.6, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,255,255,${alpha})`; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    const now = Date.now();
+    // Remove expired targets
+    const before = targets.length;
+    targets = targets.filter(t => now - t.born < targetLife);
+    if (targets.length < before) { lives -= (before - targets.length); if (lives <= 0) { endGame(); return; } }
+    draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    let hit = false;
+    for (let i = targets.length - 1; i >= 0; i--) {
+      const t = targets[i];
+      const dx = x - t.x, dy = y - t.y;
+      if (dx * dx + dy * dy < t.r * t.r) { targets.splice(i, 1); hit = true; score += 10; break; }
+    }
+    if (!hit) { lives--; score = Math.max(0, score - 5); }
+    hud.setScore(score);
+    if (score % 50 === 0) { level++; spawnMs = Math.max(400, spawnMs * 0.92); targetLife = Math.max(800, targetLife * 0.94); targetR = Math.max(12, targetR - 1); hud.setLevel(level); }
+    if (lives <= 0) endGame();
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); targets = []; score = 0; level = 1; lives = 3; spawnMs = 1200; targetLife = 2000; targetR = 28; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    setInterval(() => { if (isPlaying) spawnTarget(); }, spawnMs);
+    update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

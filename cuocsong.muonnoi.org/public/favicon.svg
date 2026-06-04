@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Muon Noi mark">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B7EFF"/>
+      <stop offset="100%" stop-color="#7FE0E5"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#050605"/>
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#g)"/>
+  <path d="M17 42V22h6l9 10 9-10h6v20h-6V31l-9 10-9-10v11h-6z" fill="#031329"/>
+</svg>

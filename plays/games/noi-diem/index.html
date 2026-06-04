@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Nối các điểm mà không cắt nhau.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noi Diem — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #dots-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="noi-diem">
+
+<div id="hud-root"></div>
+<canvas id="dots-canvas" width="320" height="320" aria-label="Dots canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Noi Diem</h1>
+    <p>Noi các điểm theo thử từ tu 1 đến N mà không cat nhau.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'noi-diem';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Nối Điểm', desc: 'Các điểm được đánh số từ 1 đến N. Chạm điểm 1, rồi điểm 2, rồi 3... Nối liên tiếp không được bỏ sót.' },
+      { title: 'Thời gian giới hạn', desc: 'Mỗi màn có 20 giây. Càng về sáu có càng nhiều điểm và vị trí phức tạp hơn.' },
+      { title: 'Vô hạn', desc: 'Sang màn mới sáu khi hoàn thành. Thử thách giới hạn của bạn!' },
+    ],
+    en: [
+      { title: 'Connect Dots', desc: 'Dots numbered 1 to N. Tap dot 1, then 2, then 3... Connect sequentially without skipping.' },
+      { title: 'Time Limit', desc: 'Each level has 20 seconds. Later levels have more dots in complex positions.' },
+      { title: 'Endless', desc: 'New level after each completion. Challenge your limit!' },
+    ],
+  };
+  const canvas = document.getElementById('dots-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let dots = [], current = 0, score = 0, level = 1, timeLeft = 20, isPlaying = false, timerInterval = null;
+  let dotCount = 4;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function genDots(n) {
+    const d = []; const pad = 40;
+    for (let i = 0; i < n; i++) {
+      let ok = false, x, y, attempts = 0;
+      while (!ok && attempts < 200) {
+        x = pad + Math.random() * (canvas.width - pad * 2);
+        y = pad + Math.random() * (canvas.height - pad * 2);
+        ok = true;
+        for (const p of d) { const dx = p.x - x, dy = p.y - y; if (dx * dx + dy * dy < 1800) ok = false; }
+        attempts++;
+      }
+      d.push({ x, y, n: i + 1, hit: false });
+    }
+    return d;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Lines
+    ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3;
+    for (let i = 0; i < current; i++) {
+      ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[i + 1].x, dots[i + 1].y); ctx.stroke();
+    }
+    // Dots
+    for (let i = 0; i < dots.length; i++) {
+      const p = dots[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, i === current ? 14 : 10, 0, Math.PI * 2);
+      ctx.fillStyle = p.hit ? '#10b981' : (i === current ? '#f59e0b' : '#4b5563');
+      ctx.fill();
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.n, p.x, p.y);
+    }
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    if (current >= dots.length) return;
+    const target = dots[current];
+    const dx = x - target.x, dy = y - target.y;
+    if (dx * dx + dy * dy < 900) {
+      target.hit = true; current++;
+      if (current >= dots.length) { score += Math.max(10, timeLeft * 3); completeLevel(); }
+      else draw();
+    }
+  }
+
+  function completeLevel() {
+    hud.setScore(score); level++;
+    dotCount = Math.min(dotCount + 1, 15);
+    timeLeft = Math.max(12, 22 - level);
+    current = 0; dots = genDots(dotCount);
+    draw(); hud.setLevel(level);
+  }
+
+  function tick() { timeLeft--; if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); } }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); dotCount = 4; score = 0; level = 1; timeLeft = 20; current = 0; isPlaying = true;
+    dots = genDots(dotCount); draw(); hud.setScore(0); hud.setLevel(1);
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

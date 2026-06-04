@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Chiến đấu với đối thủ ngày càng mạnh.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chien Dau — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #battle-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  .battle-controls { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+  .battle-controls button { width: 60px; height: 60px; font-size: 1.5rem; border-radius: 10px; background: #1f2937; border: 1px solid #374151; color: #e5e7eb; display: flex; align-items: center; justify-content: center; }
+  .battle-controls button:active { background: #374151; transform: scale(0.95); }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="chien-dau">
+
+<div id="hud-root"></div>
+<canvas id="battle-canvas" width="300" height="300" aria-label="Battle canvas"></canvas>
+<div class="battle-controls">
+  <button id="btn-left" aria-label="Left">&#9664;</button>
+  <button id="btn-shoot" aria-label="Shoot">&#9670;</button>
+  <button id="btn-right" aria-label="Right">&#9654;</button>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Chien Dau</h1>
+    <p>Di chuyen va bạn hạ kẻ thù. Cang hạ càng nhiều kẻ dich.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'chien-dau';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Chien Dau', desc: 'Di chuyển trái phải và nhấn nút bắn để hạ kẻ thù. Kẻ thù sẽ tự động bắn trở lại.' },
+      { title: 'Kẻ địch mạnh hơn', desc: 'Càng về sáu kẻ địch càng nhanh, càng nhiều va càng khó hạ.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Ha càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Combat', desc: 'Move left/right and tap shoot to defeat enemies. Enemies shoot back automatically.' },
+      { title: 'Stronger Foes', desc: 'Later enemies are faster, more numerous, and harder to defeat.' },
+      { title: 'Endless', desc: 'No limit. Defeat as many as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('battle-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let player = { x: 150, y: 260, w: 20, h: 20, hp: 100 };
+  let enemies = [], bullets = [], ebullets = [], score = 0, level = 1, isPlaying = false;
+  let enemySpeed = 0.5, spawnRate = 0.01, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.45, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); player.y = canvas.height - 40; }
+
+  function spawnEnemy() {
+    enemies.push({ x: 20 + Math.random() * (canvas.width - 40), y: -20, w: 18, h: 18, hp: 1 + Math.floor(level / 3), speed: enemySpeed + Math.random() * 0.5 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Player
+    ctx.fillStyle = '#10b981'; ctx.fillRect(player.x - player.w / 2, player.y, player.w, player.h);
+    // Enemies
+    ctx.fillStyle = '#ef4444';
+    for (const e of enemies) ctx.fillRect(e.x - e.w / 2, e.y, e.w, e.h);
+    // Bullets
+    ctx.fillStyle = '#f59e0b'; for (const b of bullets) ctx.fillRect(b.x - 2, b.y, 4, 10);
+    ctx.fillStyle = '#ef4444'; for (const b of ebullets) ctx.fillRect(b.x - 2, b.y, 4, 10);
+    // HP bar
+    ctx.fillStyle = '#374151'; ctx.fillRect(10, 10, 100, 8);
+    ctx.fillStyle = player.hp > 50 ? '#10b981' : player.hp > 25 ? '#f59e0b' : '#ef4444';
+    ctx.fillRect(10, 10, Math.max(0, player.hp), 8);
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    // Bullets
+    for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= 6; if (bullets[i].y < 0) { bullets.splice(i, 1); continue; } }
+    for (let i = ebullets.length - 1; i >= 0; i--) { ebullets[i].y += 5; if (ebullets[i].y > canvas.height) { ebullets.splice(i, 1); continue; } }
+    // Enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i]; e.y += e.speed;
+      if (e.y > canvas.height) { enemies.splice(i, 1); continue; }
+      // Hit by bullet
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        const b = bullets[j];
+        if (Math.abs(b.x - e.x) < e.w && b.y < e.y + e.h && b.y > e.y) { e.hp--; bullets.splice(j, 1); if (e.hp <= 0) { enemies.splice(i, 1); score += 20; break; } }
+      }
+      // Shoot back
+      if (Math.random() < 0.005 && e.hp > 0) ebullets.push({ x: e.x, y: e.y + e.h });
+    }
+    // Player hit
+    for (let i = ebullets.length - 1; i >= 0; i--) {
+      const b = ebullets[i];
+      if (Math.abs(b.x - player.x) < player.w && b.y > player.y && b.y < player.y + player.h) { ebullets.splice(i, 1); player.hp -= 10; if (player.hp <= 0) { endGame(); return; } }
+    }
+    if (Math.random() < spawnRate) spawnEnemy();
+    if (score > 0 && score % 100 === 0) { level++; enemySpeed += 0.2; spawnRate = Math.min(0.04, spawnRate + 0.003); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function moveLeft() { player.x = Math.max(player.w / 2, player.x - 15); }
+  function moveRight() { player.x = Math.min(canvas.width - player.w / 2, player.x + 15); }
+  function shoot() { bullets.push({ x: player.x, y: player.y }); }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); enemies = []; bullets = []; ebullets = []; score = 0; level = 1; player.hp = 100; player.x = canvas.width / 2;
+    enemySpeed = 0.5; spawnRate = 0.01; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-left').addEventListener('pointerdown', moveLeft);
+  document.getElementById('btn-right').addEventListener('pointerdown', moveRight);
+  document.getElementById('btn-shoot').addEventListener('pointerdown', shoot);
+  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') moveLeft(); if (e.key === 'ArrowRight') moveRight(); if (e.key === ' ' || e.key === 'ArrowUp') shoot(); });
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

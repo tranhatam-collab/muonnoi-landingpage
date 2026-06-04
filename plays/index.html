@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Muôn Nơi · Plays — Mục lục trò chơi</title>
+  <meta name="description" content="Play Layer của Muôn Nơi: 5 tầng game. Chơi 3–5 lượt miễn phí không cần tài khoản; đăng ký để chơi tiếp, lưu lịch sử và nhận Muôn Điểm."/>
+  <link rel="canonical" href="https://plays.muonnoi.org/"/>
+  <link rel="alternate" hreflang="vi" href="https://plays.muonnoi.org/"/>
+  <link rel="alternate" hreflang="en" href="https://plays.muonnoi.org/?lang=en"/>
+  <link rel="alternate" hreflang="x-default" href="https://plays.muonnoi.org/"/>
+  <link rel="stylesheet" href="assets/plays.css">
+  <link rel="manifest" href="manifest.json">
+  <script type="application/ld+json">{
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"Muôn Nơi · Plays",
+    "alternateName":"Muon Noi Plays",
+    "url":"https://plays.muonnoi.org/",
+    "description":"102 trò chơi không có màn cuối — từ Micro Games đến Civilization Games. Chơi thử miễn phí, không quảng cáo.",
+    "inLanguage":["vi","en"],
+    "publisher":{"@type":"Organization","name":"Muôn Nơi · Muôn Nói","url":"https://muonnoi.org"},
+    "potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://plays.muonnoi.org/?search={search_term_string}"},"query-input":"required name=search_term_string"}
+  }</script>
+  <style>
+    .rules{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+    .rules .chip{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);
+      border-radius:14px;padding:12px 14px}
+    .rules .chip b{display:block;font-size:13px;margin-bottom:3px}
+    .rules .chip span{font-size:12px;color:var(--muted);line-height:1.5}
+    .toc{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+    .toc a{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:5px 10px;border-radius:999px}
+    .toc a:hover{border-color:var(--line2);color:var(--text)}
+    .gcard .free{margin-top:8px;font-size:11px;color:var(--warn)}
+    .filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .filterbar .chip{border:1px solid var(--line);background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;font-size:12px;cursor:pointer;user-select:none}
+    .filterbar .chip.on{color:var(--text);border-color:var(--brand);background:rgba(124,92,255,.12)}
+    .sortwrap{display:flex;align-items:center;gap:8px;margin:8px 0}
+    .sortwrap select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13px}
+    .agefilter{display:flex;align-items:center;gap:10px;margin:8px 0}
+    .agefilter input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--line);border-radius:2px}
+    .agefilter input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--brand);cursor:pointer}
+    .agefilter .val{min-width:32px;text-align:right;font-size:13px;font-weight:600;color:var(--brand2)}
+    .hb{display:none;flex-direction:column;gap:4px;padding:6px;cursor:pointer}
+    .hb span{width:22px;height:2px;background:var(--text);border-radius:2px}
+    .mobmenu{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:flex-end}
+    .mobmenu.open{display:flex}
+    .mobpanel{width:280px;height:100%;background:var(--bg2);border-left:1px solid var(--line);padding:20px;display:flex;flex-direction:column;gap:16px;transform:translateX(100%);transition:transform .25s ease}
+    .mobmenu.open .mobpanel{transform:translateX(0)}
+    .mobpanel h3{margin:0;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+    .mobpanel a{padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--text);text-decoration:none}
+    .botnav{position:fixed;bottom:0;left:0;right:0;z-index:50;display:none;justify-content:space-around;align-items:center;padding:8px 0;background:rgba(11,12,16,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+    .botnav a{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:11px;padding:4px 12px;text-decoration:none}
+    .botnav a.active{color:var(--brand2)}
+    .botnav a .ico{font-size:20px}
+    .fdrawer{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center}
+    .fdrawer.open{display:flex}
+    .fdrawer .fpanel{width:100%;max-height:85vh;background:var(--bg2);border-top:1px solid var(--line);border-radius:20px 20px 0 0;padding:20px;overflow-y:auto;transform:translateY(100%);transition:transform .25s ease}
+    .fdrawer.open .fpanel{transform:translateY(0)}
+    .fdrawer .fhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .fdrawer .fhead h3{margin:0;font-size:16px}
+    .fdrawer .fhead button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;cursor:pointer}
+    .mobfilterbtn{display:none;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13px;cursor:pointer;margin:8px 0}
+    .mobfilterbtn .badge{background:var(--brand);color:#fff;font-size:11px;border-radius:999px;padding:2px 8px}
+    @media(max-width:600px){.botnav{display:flex}.container{padding-bottom:72px}.mobfilterbtn{display:flex}#filters{display:none}#filters.open{display:block}}
+    @media(max-width:900px){.hb{display:flex}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <h1>Muôn Nơi · Plays</h1>
+          <div class="small">plays.muonnoi.org · Play Layer</div>
+        </div>
+      </div>
+      <div class="nav">
+        <span class="pill" id="authPill">Đang kiểm tra…</span>
+        <span class="pill" id="pointsPill" title="Muôn Điểm">◇ —</span>
+        <span class="pill" id="langToggle" style="cursor:pointer" title="Ngôn ngữ / Language">🇻🇳 VI</span>
+        <a class="pill" href="https://muonnoi.org">muonnoi.org</a>
+      </div>
+      <div class="hb" id="hb"><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="hero">
+      <div class="tag">Game đưa con người ra khỏi màn hình</div>
+      <h2>Mục lục trò chơi — Đỉnh núi không có thật, nhưng mỗi bước chân thì có.</h2>
+      <p class="small">
+        Play Layer của Muôn Nơi — 5 tầng game từ <b>giải trí nhanh</b> tới <b>kiến tạo cộng đồng thật</b>.
+        Mỗi game <b>không có màn cuối</b>: bạn đua với chính mình.
+      </p>
+      <p style="margin-top:12px">
+        <a class="pill" href="#" id="btn-random" style="background:var(--brand2);color:#fff;padding:10px 20px">🎲 Chơi ngẫu nhiên</a>
+      </p>
+    </div>
+
+    <!-- Menu điều hướng -->
+    <nav class="menu">
+      <a class="brandlink" href="#sansang">✅ Sẵn sàng</a>
+      <a href="#mucluc">🗂️ Theo tầng</a>
+      <a href="#hocvien">🎓 Học viện</a>
+      <a href="#quydinh">📋 Quy định</a>
+      <a href="stats.html">📊 Thống kê</a>
+      <a href="register.html">✍️ Đăng ký</a>
+      <a href="terms.html">⚖️ Điều khoản</a>
+      <a href="privacy.html">🔒 Quyền riêng tư</a>
+    </nav>
+
+    <!-- Quy định nhanh -->
+    <div class="rules" id="quydinh">
+      <div class="chip"><b>🎮 Chơi thử miễn phí</b><span>Mỗi trò cho <b>3–5 lượt miễn phí</b>, không cần tài khoản. Tiến trình chỉ lưu tạm trên trình duyệt.</span></div>
+      <div class="chip"><b>✓ Đăng ký để chơi tiếp</b><span>Hết lượt miễn phí, <a href="register.html" style="color:var(--brand2)">đăng ký thành viên</a> để chơi không giới hạn, lưu lịch sử &amp; nhận Muôn Điểm.</span></div>
+      <div class="chip"><b>🔒 Đồng ý trước khi chơi</b><span>Khi bắt đầu, bạn cần đồng ý <a href="terms.html" style="color:var(--brand2)">Điều khoản &amp; Miễn trừ trách nhiệm</a> và <a href="privacy.html" style="color:var(--brand2)">Quyền riêng tư</a>.</span></div>
+    </div>
+
+    <button class="mobfilterbtn" id="mobFilterBtn">🔧 Lọc nâng cao <span class="badge" id="mobFilterCount" style="display:none">0</span></button>
+    <div class="fdrawer" id="fdrawer">
+      <div class="fpanel">
+        <div class="fhead"><h3>Lọc & Sắp xếp</h3><button id="fclose">Xong</button></div>
+        <div id="fdrawerInner"></div>
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div style="margin:12px 0">
+      <input type="search" id="search" placeholder="🔍 Tìm game..." style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:14px">
+    </div>
+
+    <div class="section" id="recent" style="display:none">
+      <h2>🕒 Chơi gần đây</h2><span class="count" id="recentCount"></span>
+    </div>
+    <div class="games" id="recentGames"></div>
+
+    <div class="section" id="sansang">
+      <h2>✅ Sẵn sàng — chơi được ngay</h2><span class="count" id="liveCount"></span>
+    </div>
+    <div class="games" id="liveGames"></div>
+
+    <div class="section" id="mucluc"><h2>🗂️ Mục lục theo tầng</h2><span class="count">Nhấn để xem nhanh</span></div>
+    <div class="toc" id="toc"></div>
+
+    <div id="tierSections"></div>
+
+    <div class="section" id="hocvien"><h2>🎓 Học viện Muôn Nơi — bộ game đã lên kế hoạch</h2><span class="count" id="colCount"></span></div>
+    <p class="small" style="margin:-4px 0 12px">Các bộ game chuyên đề (song ngữ Anh–Việt). Nhấn để xem 10 trò trong mỗi bộ &amp; đọc kế hoạch chi tiết.</p>
+    <div class="cols" id="collections"></div>
+
+    <div class="footer">
+      Muôn Điểm là điểm thưởng nội bộ — <b>không mua bằng tiền, không quy đổi ra tiền mặt</b>.<br/>
+      Lộ trình <span id="planCount"></span> game · Giai đoạn 1: <span id="p1Count"></span> game · IP mới: <span id="ipCount"></span> game.<br/>
+      Học viện: <span id="colFoot"></span> — tất cả song ngữ Anh–Việt.<br/>
+      <a href="terms.html">Điều khoản &amp; Miễn trừ trách nhiệm</a> ·
+      <a href="privacy.html">Quyền riêng tư &amp; Bảo mật</a> ·
+      <a href="register.html">Đăng ký thành viên</a><br/>
+      © Muôn Nơi · Muôn Nói — proof-first, privacy-first.
+    </div>
+  </div>
+
+  <script src="assets/catalog-lite.js"></script>
+  <script src="assets/collections.js"></script>
+  <script src="assets/plays-sdk.js"></script>
+  <!-- Mobile Menu -->
+  <div class="mobmenu" id="mobmenu">
+    <div class="mobpanel">
+      <h3>📑 Mục lục</h3>
+      <a href="/">🏠 Trang chủ</a>
+      <a href="#sansang">✅ Sẵn sàng chơi</a>
+      <a href="#mucluc">🗂️ Theo tầng</a>
+      <a href="#hocvien">🎓 Học viện</a>
+      <a href="#quydinh">📋 Quy định</a>
+      <a href="stats.html">📊 Thống kê</a>
+      <a href="detail.html">📋 Chi tiết</a>
+      <a href="register.html">✍️ Đăng ký</a>
+      <a href="terms.html">⚖️ Điều khoản</a>
+      <a href="privacy.html">🔒 Quyền riêng tư</a>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <h3 style="margin-bottom:8px">🌐 Ngôn ngữ</h3>
+        <div style="display:flex;gap:10px">
+          <a href="?lang=vi" onclick="event.preventDefault();setLang('vi');document.getElementById('mobmenu').classList.remove('open')" style="border:1px solid var(--line);padding:6px 14px;border-radius:8px;font-size:13px">🇻🇳 Tiếng Việt</a>
+          <a href="?lang=en" onclick="event.preventDefault();setLang('en');document.getElementById('mobmenu').classList.remove('open')" style="border:1px solid var(--line);padding:6px 14px;border-radius:8px;font-size:13px">🇬🇧 English</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="botnav">
+    <a href="/" class="active"><span class="ico">🏠</span><span>Trang chủ</span></a>
+    <a href="detail.html"><span class="ico">📋</span><span>Chi tiết</span></a>
+    <a href="register.html"><span class="ico">👤</span><span>Tài khoản</span></a>
+  </nav>
+
+  <script>
+    // Mobile hamburger toggle
+    document.getElementById('hb').addEventListener('click', ()=>document.getElementById('mobmenu').classList.add('open'));
+    document.getElementById('mobmenu').addEventListener('click', e=>{ if(e.target===document.getElementById('mobmenu')) document.getElementById('mobmenu').classList.remove('open'); });
+
+    const C = window.MN_CATALOG;
+    const TIERS = C.tiers, GROUPS = C.groups;
+    let activeFilters = { groups:new Set(), tiers:new Set(), statuses:new Set(), diffs:new Set(), age:18 };
+    let sortBy = 'default';
+    let lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('mn_lang') || 'vi';
+    function t(obj) { return obj[lang] || obj.vi || obj.en || ''; }
+    function setLang(l) {
+      lang = l; localStorage.setItem('mn_lang', l);
+      document.documentElement.lang = l;
+      document.getElementById('langToggle').textContent = l==='vi'?'🇻🇳 VI':'🇬🇧 EN';
+      render(); updateHero();
+    }
+    function updateHero(){
+      const hero = {
+        vi: { tag:'Game đưa con người ra khỏi màn hình', h2:'Mục lục trò chơi — Đỉnh núi không có thật, nhưng mỗi bước chân thì có.', p:'Play Layer của Muôn Nơi — 5 tầng game từ <b>giải trí nhanh</b> tới <b>kiến tạo cộng đồng thật</b>. Mỗi game <b>không có màn cuối</b>: bạn đua với chính mình.', btn:'🎲 Chơi ngẫu nhiên', search:'🔍 Tìm game...' },
+        en: { tag:'Games that bring people off-screen', h2:'Game Catalog — The summit is not real, but every step is.', p:'Play Layer of Muon Noi — 5 tiers from <b>quick entertainment</b> to <b>real community building</b>. Every game <b>has no final level</b>: you compete with yourself.', btn:'🎲 Random game', search:'🔍 Search game...' }
+      };
+      const h = hero[lang]||hero.vi;
+      document.querySelector('.hero .tag').textContent = h.tag;
+      document.querySelector('.hero h2').textContent = h.h2;
+      document.querySelector('.hero p.small').innerHTML = h.p;
+      document.getElementById('btn-random').textContent = h.btn;
+      document.getElementById('search').placeholder = h.search;
+    }
+
+    const BADGES = {
+      vi: { live:'CHƠI ĐƯỢC', newip:'IP MỚI', wave1:'ĐANG LÊN KẾ HOẠCH', roadmap:'LỘ TRÌNH' },
+      en: { live:'PLAYABLE', newip:'NEW IP', wave1:'PLANNED', roadmap:'ROADMAP' }
+    };
+    const FREE_LABELS = { vi:'lượt miễn phí', en:'free plays' };
+    const TIER_LABELS = { vi:'Tầng', en:'Tier' };
+    function badgeFor(g){
+      const b = BADGES[lang] || BADGES.vi;
+      return `<span class="badge ${g.status==='live'?'live':g.status==='wave1'?'soon':''}">${b[g.status]||b.roadmap}</span>`;
+    }
+    function card(g){
+      const live = g.status === 'live';
+      const eco = g.eco ? `<div class="genre">↔ ${g.eco}</div>` : '';
+      const free = live ? `<div class="free" data-free="${g.id}">${g.free||3} ${FREE_LABELS[lang]||FREE_LABELS.vi}</div>` : '';
+      const name = t(g.name || {});
+      const desc = t(g.desc || {});
+      const groupLabel = t(GROUPS[g.group] || {});
+      const path = g.path || g.file || '#';
+      const inner = `
+        <div class="thumb">${(GROUPS[g.group]||{}).icon||'🎮'}</div>
+        ${badgeFor(g)}
+        <h3>${name}</h3>
+        <div class="genre">${groupLabel} · ${TIER_LABELS[lang]||TIER_LABELS.vi} ${g.tier}</div>
+        ${eco}
+        ${desc?`<div class="desc">${desc}</div>`:''}
+        ${live?'<div class="pg" data-pg="'+g.id+'"></div>':''}
+        ${free}`;
+      return live ? `<a class="gcard" href="detail.html?id=${g.id}">${inner}</a>`
+                  : `<div class="gcard locked">${inner}</div>`;
+    }
+
+    let searchTerm = '';
+    const DIFF_LABELS = { easy:'Dễ', medium:'Vừa', hard:'Khó', expert:'Chuyên gia' };
+    const STATUS_LABELS = { live:'Chơi được', wave1:'Sắp ra' };
+    function render(){
+      const match = g => {
+        if (activeFilters.groups.size && !activeFilters.groups.has(g.group)) return false;
+        if (activeFilters.tiers.size && !activeFilters.tiers.has(String(g.tier))) return false;
+        if (activeFilters.statuses.size && !activeFilters.statuses.has(g.status)) return false;
+        if (activeFilters.diffs.size && !activeFilters.diffs.has(g.difficulty)) return false;
+        if (g.age > activeFilters.age) return false;
+        if (!searchTerm) return true;
+        const s = searchTerm.toLowerCase();
+        const nameVi = g.name ? g.name.vi : (g.n || '');
+        const nameEn = g.name ? g.name.en : (g.en || '');
+        const desc = g.desc ? g.desc.vi : (g.d || '');
+        return nameVi.toLowerCase().includes(s) || nameEn.toLowerCase().includes(s) || desc.toLowerCase().includes(s);
+      };
+      let all = C.games.filter(g => match(g));
+      if (sortBy === 'name') all.sort((a,b)=>t(a.name).localeCompare(t(b.name)));
+      else if (sortBy === 'tier') all.sort((a,b)=>a.tier-b.tier);
+      else if (sortBy === 'diff'){
+        const order={easy:1,medium:2,hard:3,expert:4};
+        all.sort((a,b)=>(order[a.difficulty]||0)-(order[b.difficulty]||0));
+      }
+      else if (sortBy === 'free') all.sort((a,b)=>b.free-a.free);
+
+      const live = all.filter(g => g.status==='live');
+      document.getElementById('liveGames').innerHTML =
+        live.length ? live.map(card).join('') : '<div class="small">Không có game sẵn sàng trong nhóm này.</div>';
+      document.getElementById('liveCount').textContent = live.length + ' game';
+
+      const host = document.getElementById('tierSections');
+      const toc = document.getElementById('toc');
+      host.innerHTML = ''; toc.innerHTML = '';
+      for (const t of [1,2,3,4,5]){
+        const list = all.filter(g => g.tier===t);
+        if (!list.length) continue;
+        const T = TIERS[t];
+        toc.innerHTML += `<a href="#tier${t}">${TIER_LABELS[lang]||'Tầng'} ${t} · ${t(T)} (${list.length})</a>`;
+        host.innerHTML += `
+          <div class="section" id="tier${t}"><h2>${TIER_LABELS[lang]||'Tầng'} ${t} · ${t(T)}</h2><span class="count">${T.note} · ${list.length} game</span></div>
+          <div class="games">${list.map(card).join('')}</div>`;
+      }
+      paintProgress();
+    }
+
+    (function(){
+      function buildFilterHTML(){
+        let html = '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Nhóm</div><div class="filterbar">';
+        html += Object.keys(GROUPS).map(k => `<span class="chip ${activeFilters.groups.has(k)?'on':''}" data-type="group" data-val="${k}">${GROUPS[k].icon||''} ${t(GROUPS[k])}</span>`).join('');
+        html += '</div>';
+        html += '<div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Tier</div><div class="filterbar">';
+        html += Object.keys(TIERS).map(k => `<span class="chip ${activeFilters.tiers.has(k)?'on':''}" data-type="tier" data-val="${k}">Tier ${k}</span>`).join('');
+        html += '</div>';
+        html += '<div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Độ khó</div><div class="filterbar">';
+        html += Object.keys(DIFF_LABELS).map(k => `<span class="chip ${activeFilters.diffs.has(k)?'on':''}" data-type="diff" data-val="${k}">${DIFF_LABELS[k]}</span>`).join('');
+        html += '</div>';
+        html += '<div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Trạng thái</div><div class="filterbar">';
+        html += Object.keys(STATUS_LABELS).map(k => `<span class="chip ${activeFilters.statuses.has(k)?'on':''}" data-type="status" data-val="${k}">${STATUS_LABELS[k]}</span>`).join('');
+        html += '</div>';
+        html += '<div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Độ tuổi tối đa</div><div class="agefilter"><input type="range" class="ageRange" min="3" max="18" value="'+(activeFilters.age||18)+'"><span class="val ageVal">'+(activeFilters.age||18)+'+</span></div>';
+        html += '<div class="sortwrap"><span style="font-size:12px;color:var(--muted)">Sắp xếp:</span><select class="sortSel"><option value="default">Mặc định</option><option value="name">Tên A-Z</option><option value="tier">Tier ↑</option><option value="diff">Độ khó ↑</option><option value="free">Lượt free ↓</option></select></div>';
+        return html;
+      }
+      function bindFilters(container){
+        container.querySelectorAll('.chip').forEach(p => p.onclick = () => {
+          const type = p.dataset.type, val = p.dataset.val;
+          const set = activeFilters[type+'s'];
+          if (set.has(val)) set.delete(val); else set.add(val);
+          p.classList.toggle('on', set.has(val));
+          syncFilterBadge(); render();
+        });
+        container.querySelectorAll('.ageRange').forEach(el => el.addEventListener('input', () => {
+          activeFilters.age = parseInt(el.value);
+          container.querySelectorAll('.ageVal').forEach(a=>a.textContent=el.value+'+');
+          syncFilterBadge(); render();
+        }));
+        container.querySelectorAll('.sortSel').forEach(el => el.addEventListener('change', () => { sortBy = el.value; render(); }));
+      }
+      function syncFilterBadge(){
+        const total = activeFilters.groups.size + activeFilters.tiers.size + activeFilters.statuses.size + activeFilters.diffs.size + (activeFilters.age<18?1:0);
+        const badge = document.getElementById('mobFilterCount');
+        if (badge) { badge.textContent = total; badge.style.display = total ? '' : 'none'; }
+      }
+
+      document.getElementById('filters').innerHTML = buildFilterHTML();
+      bindFilters(document.getElementById('filters'));
+      document.getElementById('fdrawerInner').innerHTML = buildFilterHTML();
+      bindFilters(document.getElementById('fdrawerInner'));
+
+      // Mobile drawer toggle
+      const drawer = document.getElementById('fdrawer');
+      document.getElementById('mobFilterBtn').addEventListener('click', () => {
+        document.getElementById('fdrawerInner').innerHTML = buildFilterHTML();
+        bindFilters(document.getElementById('fdrawerInner'));
+        drawer.classList.add('open');
+      });
+      document.getElementById('fclose').addEventListener('click', () => drawer.classList.remove('open'));
+      drawer.addEventListener('click', e => { if(e.target===drawer) drawer.classList.remove('open'); });
+
+      const searchInput = document.getElementById('search');
+      searchInput.addEventListener('input', () => { searchTerm = searchInput.value; render(); });
+    })();
+
+    async function paintProgress(){
+      const logged = MNPlays.isLoggedIn();
+      for (const g of C.games.filter(x=>x.status==='live')){
+        const pg = document.querySelector(`[data-pg="${g.id}"]`);
+        if (pg){
+          const p = await MNPlays.loadProgress(g.id);
+          if (p && (p.level || p.score)) {
+            const st = p.status==='played'?'Đã chơi':p.status==='playing'?'Đang chơi':'';
+            pg.textContent = `${st?st+' · ':''}Mức ${p.level||0} · ${p.score||0}đ`;
+          } else pg.textContent = 'Chưa chơi';
+        }
+        const fe = document.querySelector(`[data-free="${g.id}"]`);
+        if (fe){
+          if (logged) { fe.textContent = '∞ thành viên'; fe.style.color = 'var(--ok)'; }
+          else { const left = MNPlays.playsLeft(g.id, g.free||3); fe.textContent = `Còn ${left}/${g.free||3} lượt miễn phí`; }
+        }
+      }
+    }
+
+    document.getElementById('planCount').textContent = C.counts.total;
+    document.getElementById('p1Count').textContent = C.counts.live;
+    document.getElementById('ipCount').textContent = Object.keys(C.groups).length;
+    render();
+
+    // Recently played (from localStorage)
+    (function(){
+      try {
+        const recent = JSON.parse(localStorage.getItem('mn_recent_games') || '[]');
+        const recentIds = [...new Set(recent)].slice(0, 6);
+        const recentGames = recentIds.map(id => C.games.find(g => g.id === id)).filter(Boolean);
+        if (recentGames.length) {
+          document.getElementById('recent').style.display = '';
+          document.getElementById('recentCount').textContent = recentGames.length + ' game';
+          document.getElementById('recentGames').innerHTML = recentGames.map(card).join('');
+        }
+      } catch(e) {}
+    })();
+
+    // Học viện — bộ sưu tập game đã lên kế hoạch
+    (function(){
+      const CO = window.MN_COLLECTIONS;
+      const host = document.getElementById('collections');
+      document.getElementById('colCount').textContent = CO.counts.sets + ' bộ · ' + CO.counts.games + ' game';
+      document.getElementById('colFoot').textContent = CO.counts.sets + ' bộ · ' + CO.counts.games + ' game';
+      host.innerHTML = CO.collections.map(c => {
+        const ageTag = c.minAge >= 12 ? `<span class="tag2 age">≥ ${c.minAge} tuổi</span>` : '';
+        const games = c.games.map(g => `<li><b>${g[0]}</b><span>${g[1]}</span></li>`).join('');
+        return `<div class="col" data-id="${c.id}">
+          <div class="head">
+            <div class="ic">${c.icon}</div>
+            <div>
+              <h3>${c.vi} · ${c.en}</h3>
+              <div class="meta">
+                <span class="tag2">${c.games.length} game</span>
+                <span class="tag2 bi">Song ngữ EN–VI</span>
+                <span class="tag2">${c.audience}</span>
+                ${ageTag}
+              </div>
+              <div class="d">${c.desc}</div>
+            </div>
+            <div class="chev">▾</div>
+          </div>
+          <div class="body">
+            <ul class="glist">${games}</ul>
+            <a class="doclink" href="${c.doc}" target="_blank">Đọc kế hoạch chi tiết →</a>
+          </div>
+        </div>`;
+      }).join('');
+      host.querySelectorAll('.col .head').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+    })();
+
+    (async () => {
+      const { loggedIn, user } = await MNPlays.init();
+      const ap = document.getElementById('authPill');
+      const pp = document.getElementById('pointsPill');
+      if (loggedIn) {
+        ap.textContent = '✓ ' + (user.email ? user.email.split('@')[0] : 'Thành viên');
+        ap.classList.add('active');
+        pp.textContent = '◇ ' + (await MNPlays.getBalance()) + ' ' + C.currency.code;
+      } else {
+        ap.textContent = 'Đăng nhập để lưu';
+        ap.style.cursor = 'pointer';
+        ap.onclick = () => location.href = MNPlays.loginUrl();
+        pp.textContent = '◇ khách';
+      }
+      paintProgress();
+    })();
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // Random game button
+    document.getElementById('btn-random').addEventListener('click', (e) => {
+      e.preventDefault();
+      const live = C.games.filter(g => g.status === 'live');
+      if (live.length) {
+        const pick = live[Math.floor(Math.random() * live.length)];
+        location.href = 'detail.html?id=' + pick.id;
+      }
+    });
+
+    // Language toggle
+    document.getElementById('langToggle').addEventListener('click', () => setLang(lang==='vi'?'en':'vi'));
+    setLang(lang);
+  </script>
+</body>
+</html>

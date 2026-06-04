@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Chọn màu đúng với chữ cái.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phan Biet Mau — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #stroop-word { text-align: center; font-size: 3rem; font-weight: 800; margin: 1.5rem 0; min-height: 4rem; }
+  #stroop-options { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1rem auto; max-width: 360px; }
+  .stroop-btn { width: 80px; height: 60px; border-radius: 10px; border: 2px solid #374151; font-size: 1rem; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .stroop-btn:active { transform: scale(0.95); }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="phan-biet-mau">
+
+<div id="hud-root"></div>
+<div id="stroop-word">DO</div>
+<div id="stroop-options"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Phan Biet Mau</h1>
+    <p>Chon màu CHU KHONG PHAI nghia cua tu. Dung bi danh lua!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'phan-biet-mau';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Phân Biệt Màu', desc: 'Từ viết "ĐỎ" nhưng tô màu XANH. Nhiệm vụ của bạn là chọn MÀU CHỮ (XANH), không phải nghĩa (ĐỎ).' },
+      { title: 'Hiệu ứng Stroop', desc: 'Não tự động đọc nghĩa từ. Bạn phải ép não bỏ quá nghĩa và chỉ tập trúng vào màu sắc.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Càng nhanh càng nhiều điểm!' },
+    ],
+    en: [
+      { title: 'Color Match', desc: 'Word says "RED" but colored BLUE. Your task: pick the INK COLOR (BLUE), not the meaning (RED).' },
+      { title: 'Stroop Effect', desc: 'Brain automatically reads word meaning. You must override and focus only on color.' },
+      { title: 'Endless', desc: 'No limit. Faster = more points!' },
+    ],
+  };
+  const COLORS = [
+    { name: 'DO', en: 'RED', hex: '#ef4444' },
+    { name: 'XANH', en: 'BLUE', hex: '#3b82f6' },
+    { name: 'XANH LA', en: 'GREEN', hex: '#10b981' },
+    { name: 'VANG', en: 'YELLOW', hex: '#f59e0b' },
+  ];
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const wordEl = document.getElementById('stroop-word');
+  const optsEl = document.getElementById('stroop-options');
+
+  let score = 0, level = 1, lives = 3, timeLeft = 0, isPlaying = false, timerInterval = null;
+  let currentWordIdx = 0, currentColorIdx = 0, showTime = 2000;
+
+  function buildOptions() {
+    optsEl.innerHTML = '';
+    for (let i = 0; i < COLORS.length; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'stroop-btn';
+      btn.style.background = COLORS[i].hex;
+      btn.style.color = i === 3 ? '#000' : '#fff';
+      btn.textContent = LANG === 'vi' ? COLORS[i].name : COLORS[i].en;
+      btn.addEventListener('pointerdown', () => onTap(i));
+      optsEl.appendChild(btn);
+    }
+  }
+
+  function showProblem() {
+    currentWordIdx = Math.floor(Math.random() * COLORS.length);
+    đỏ { currentColorIdx = Math.floor(Math.random() * COLORS.length); } while (currentColorIdx === currentWordIdx);
+    const c = COLORS[currentWordIdx];
+    wordEl.textContent = LANG === 'vi' ? c.name : c.en;
+    wordEl.style.color = COLORS[currentColorIdx].hex;
+    timeLeft = Math.max(15, showTime / 100);
+    clearInterval(timerInterval);
+    timerInterval = setInterval(tick, 100);
+  }
+
+  function tick() {
+    timeLeft -= 1;
+    if (timeLeft <= 0) { lives--; clearInterval(timerInterval); if (lives <= 0) endGame(); else showProblem(); }
+  }
+
+  function onTap(idx) {
+    if (!isPlaying) return;
+    clearInterval(timerInterval);
+    if (idx === currentColorIdx) {
+      score += Math.floor(timeLeft) * 10;
+      hud.setScore(score);
+      if (score % 80 === 0) { level++; showTime = Math.max(800, showTime * 0.92); hud.setLevel(level); }
+      showProblem();
+    } else {
+      lives--; if (lives <= 0) { endGame(); } else { showProblem(); }
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    buildOptions(); score = 0; level = 1; lives = 3; showTime = 2000; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); showProblem();
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

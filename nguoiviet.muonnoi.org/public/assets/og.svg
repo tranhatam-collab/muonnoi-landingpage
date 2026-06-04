@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Người Việt Muôn Nơi — Đi xa để quay trở về">
+  <title>Người Việt Muôn Nơi — Đi xa để quay trở về</title>
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#102236"/>
+      <stop offset="55%" stop-color="#0a141f"/>
+      <stop offset="100%" stop-color="#070b11"/>
+    </radialGradient>
+    <linearGradient id="markGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B7EFF"/>
+      <stop offset="100%" stop-color="#7FE0E5"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef4fb"/>
+      <stop offset="55%" stop-color="#3B7EFF"/>
+      <stop offset="100%" stop-color="#7FE0E5"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B7EFF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#7FE0E5" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Decorative orbit rings (subtle, brand palette only) -->
+  <circle cx="980" cy="120" r="240" fill="none" stroke="url(#ringGrad)" stroke-width="1.5"/>
+  <circle cx="220" cy="540" r="180" fill="none" stroke="url(#ringGrad)" stroke-width="1.2"/>
+
+  <!-- Top-left brand lockup: NV mark + wordmark -->
+  <g transform="translate(60,60)">
+    <circle cx="40" cy="40" r="40" fill="url(#markGrad)"/>
+    <text x="40" y="55" text-anchor="middle" font-family="Be Vietnam Pro, Inter, system-ui, sans-serif" font-weight="900" font-size="32" fill="#ffffff" letter-spacing="0.5">NV</text>
+    <text x="100" y="50" font-family="Be Vietnam Pro, Inter, system-ui, sans-serif" font-weight="700" font-size="32" fill="#eef4fb">Người Việt Muôn Nơi</text>
+  </g>
+
+  <!-- Center title -->
+  <g>
+    <text x="600" y="330" text-anchor="middle" font-family="Be Vietnam Pro, Inter, system-ui, sans-serif" font-weight="900" font-size="88" fill="url(#titleGrad)" letter-spacing="-1">Đi Xa Để Quay Trở Về</text>
+    <text x="600" y="395" text-anchor="middle" font-family="Be Vietnam Pro, Inter, system-ui, sans-serif" font-weight="500" font-size="22" fill="#7FE0E5" letter-spacing="0.3">Nhánh hành trình của Muôn Nơi · nguoiviet.muonnoi.org</text>
+  </g>
+
+  <!-- Divider accent -->
+  <line x1="500" y1="430" x2="700" y2="430" stroke="#3B7EFF" stroke-width="2" opacity="0.6"/>
+
+  <!-- Bottom-right wordmark + gold dot -->
+  <g transform="translate(1140,570)">
+    <circle cx="0" cy="0" r="6" fill="#D4AF37"/>
+    <text x="-16" y="6" text-anchor="end" font-family="Be Vietnam Pro, Inter, system-ui, sans-serif" font-weight="600" font-size="20" fill="#eef4fb" letter-spacing="0.5">muonnoi.org</text>
+  </g>
+</svg>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Thổi bong bóng càng nhiều càng tốt.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thoi Bong Bong — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #bubble-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="thoi-bong-bong">
+
+<div id="hud-root"></div>
+<canvas id="bubble-canvas" width="320" height="320" aria-label="Bubble canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Thoi Bong Bong</h1>
+    <p>Cham để thổi bong bóng len. Cang lớn càng nhiều diem, nhung đừng để nó vỡ!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'thoi-bong-bong';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Thoi Bong Bong', desc: 'Cham giu để thổi bong bóng. Nhả ngón tay để dừng lại trước khi nó vỡ. Bong càng lớn điểm càng nhiều.' },
+      { title: 'Giới hạn', desc: 'Mỗi bong bóng có giới hạn kích thước khác nhau. Quá giới hạn sẽ nổ va mất điểm.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn số bong. Thoi càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Blow Bubble', desc: 'Tap and hold to blow a bubble. Release before ít pops. Bigger bubble = more points.' },
+      { title: 'Limit', desc: 'Each bubble has a different size limit. Exceed ít and the bubble pops, losing points.' },
+      { title: 'Endless', desc: 'No bubble limit. Blow as many as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('bubble-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let bubbles = [], score = 0, level = 1, isPlaying = false, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const b of bubbles) {
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `hsla(${b.hue}, 70%, 60%, 0.8)`; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = `hsla(${b.hue}, 70%, 60%, 0.15)`; ctx.fill();
+    }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i];
+      if (b.growing) { b.r += 0.8 + level * 0.1; }
+      if (b.r > b.maxR) { bubbles.splice(i, 1); score = Math.max(0, score - 10); continue; }
+      if (!b.growing && b.r > 0) { score += Math.floor(b.r); b.r = 0; bubbles.splice(i, 1); }
+    }
+    hud.setScore(score);
+    if (score > 0 && score % 100 === 0) { level++; hud.setLevel(level); }
+    draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onDown(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    bubbles.push({ x, y, r: 5, maxR: 20 + Math.random() * 30 + level * 2, growing: true, hue: Math.floor(Math.random() * 360) });
+  }
+
+  function onUp() { for (const b of bubbles) b.growing = false; }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); bubbles = []; score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onDown);
+  canvas.addEventListener('pointerup', onUp);
+  canvas.addEventListener('pointerleave', onUp);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

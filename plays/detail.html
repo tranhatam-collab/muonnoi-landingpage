@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Chi tiết trò chơi — Muôn Nơi · Plays</title>
+  <meta name="description" content="Play Layer của Muôn Nơi — 102 trò chơi không có màn cuối."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="Muôn Nơi · Plays"/>
+  <meta id="og-title" property="og:title" content="Muôn Nơi · Plays"/>
+  <meta id="og-desc" property="og:description" content="Play Layer của Muôn Nơi — 102 trò chơi không có màn cuối."/>
+  <meta property="og:image" content="https://plays.muonnoi.org/assets/og-plays.png"/>
+  <meta name="twitter:card" content="summary"/>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="assets/plays.css">
+  <style>
+    .detail-hero{display:flex;gap:20px;align-items:flex-start;margin:20px 0}
+    .detail-icon{font-size:64px;line-height:1}
+    .detail-meta{flex:1}
+    .detail-meta h1{margin:0 0 8px}
+    .detail-meta .badges{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .detail-meta .tag2{font-size:12px;background:var(--card);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+    .detail-desc{line-height:1.7;color:var(--muted);margin:12px 0}
+    .detail-actions{display:flex;gap:12px;margin:20px 0}
+    .detail-actions a{flex:1;text-align:center;padding:14px;border-radius:12px;font-weight:600}
+    .btn-play{background:var(--brand2);color:#fff}
+    .btn-back{background:var(--card);border:1px solid var(--line);color:var(--text)}
+    .leaderboard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:20px 0}
+    .leaderboard h3{margin:0 0 12px}
+    .lb-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+    .lb-row:last-child{border-bottom:none}
+    .related{display:flex;gap:12px;overflow-x:auto;padding:4px 0}
+    .related .gcard{min-width:160px;flex-shrink:0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand"><div class="mark"></div><div><h1>Muôn Nơi · Plays</h1><div class="small">Chi tiết trò chơi</div></div></div>
+      <div class="nav"><a class="pill" href="index.html">← Mục lục</a></div>
+    </div>
+
+    <div id="detail"></div>
+  </div>
+
+  <script src="assets/catalog.js"></script>
+  <script src="assets/plays-sdk.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const gameId = params.get('id') || params.get('game');
+    const C = window.MN_CATALOG;
+    const GROUPS = C.groups;
+
+    const g = C.games.find(x => x.id === gameId || x.gameId === gameId);
+    if (!g) {
+      document.getElementById('detail').innerHTML = '<p>Game không tồn tại. <a href="index.html">Quay lại mục lục</a></p>';
+    } else {
+      const icon = (GROUPS[g.group] || {}).icon || '🎮';
+      const nameVi = g.name ? g.name.vi : (g.n || g.id);
+      const nameEn = g.name ? g.name.en : (g.en || '');
+      const desc = g.desc ? g.desc.vi : (g.d || '');
+      const descEn = g.desc ? g.desc.en : '';
+      const path = g.path || g.file || '#';
+      const difficulty = g.difficulty || 'medium';
+      const duration = g.duration || '2-5 min';
+      const tierLabel = C.tiers[g.tier] ? C.tiers[g.tier].vi : 'Tầng ' + g.tier;
+      const groupLabel = GROUPS[g.group] ? GROUPS[g.group].vi : g.group;
+
+      document.title = nameVi + ' — Muôn Nơi · Plays';
+
+      document.getElementById('detail').innerHTML = `
+        <div class="detail-hero">
+          <div class="detail-icon">${icon}</div>
+          <div class="detail-meta">
+            <h1>${nameVi}</h1>
+            <div style="color:var(--muted)">${nameEn}</div>
+            <div class="badges">
+              <span class="tag2">${groupLabel}</span>
+              <span class="tag2">${tierLabel}</span>
+              <span class="tag2">${difficulty}</span>
+              <span class="tag2">${duration}</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-desc">${desc}</div>
+        ${descEn ? `<div class="detail-desc" style="font-style:italic">${descEn}</div>` : ''}
+        <div class="detail-actions">
+          <a class="btn-play" href="${path}">▶ Chơi ngay</a>
+          <a class="btn-back" href="index.html">← Mục lục</a>
+        </div>
+        <div class="leaderboard">
+          <h3>🏆 Bảng xếp hạng</h3>
+          <div id="lb-body"><div class="lb-row"><span>Đang tải...</span></div></div>
+        </div>
+        <h3 style="margin-top:24px">🎮 Game liên quan</h3>
+        <div class="related" id="related"></div>
+      `;
+
+      // Load local progress
+      (async () => {
+        const p = await MNPlays.loadProgress(g.id);
+        if (p && (p.score || p.level)) {
+          document.getElementById('lb-body').innerHTML = `
+            <div class="lb-row"><span><b>Bạn</b></span><span>${p.score || 0}đ · Mức ${p.level || 0}</span></div>
+            <div class="lb-row"><span style="color:var(--muted)">Chơi offline — đăng nhập để lưu điểm</span></div>
+          `;
+        } else {
+          document.getElementById('lb-body').innerHTML = '<div class="lb-row"><span style="color:var(--muted)">Chưa có dữ liệu. Chơi để ghi điểm!</span></div>';
+        }
+      })();
+
+      // Related games (same group)
+      const related = C.games.filter(x => x.group === g.group && x.id !== g.id).slice(0, 5);
+      document.getElementById('related').innerHTML = related.map(r => {
+        const rIcon = (GROUPS[r.group] || {}).icon || '🎮';
+        const rName = r.name ? r.name.vi : (r.n || r.id);
+        const rPath = r.path || r.file || '#';
+        const rLive = r.status === 'live';
+        return rLive
+          ? `<a class="gcard" href="detail.html?id=${r.id}"><div class="thumb">${rIcon}</div><h3>${rName}</h3></a>`
+          : `<div class="gcard locked"><div class="thumb">${rIcon}</div><h3>${rName}</h3></div>`;
+      }).join('');
+    }
+
+    // Track recently played
+    if (g) {
+      try {
+        const recent = JSON.parse(localStorage.getItem('mn_recent_games') || '[]');
+        const idx = recent.indexOf(g.id);
+        if (idx > -1) recent.splice(idx, 1);
+        recent.unshift(g.id);
+        localStorage.setItem('mn_recent_games', JSON.stringify(recent.slice(0, 20)));
+      } catch(e) {}
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

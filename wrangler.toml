@@ -7,11 +7,11 @@ compatibility_date = "2026-02-03"
 [[d1_databases]]
 binding = "DB"
 database_name = "muonnoi_db"
-database_id = "muon-noi-landingpage"
+database_id = "2106abac-ff84-4f13-b80f-d73c76fb7d27"
 
 [[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "muonnoi_uploads"
+bucket_name = "muonnoi-uploads"
 
 [vars]
 APP_ORIGIN = "https://muonnoi.org"

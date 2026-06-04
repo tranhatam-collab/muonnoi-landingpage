@@ -1,0 +1,7 @@
+=== Test 1: Magic-link endpoint ===
+{"ok":true,"data":{"accepted":true,"channel":"email","expiresInSeconds":900}}
+=== Test 2: Welcome email via register ===
+{"ok":true,"data":{"id":"103482ec-c3df-438a-a318-3ec1b3a82ac0","email":"qa-welcome-1779167593@muonnoi.org","name":"Welcome Tester","avatar_url":null,"bio":"","role":"member","is_verified":0,"can_access_app":false}}
+Verified at: 2026-05-19 12:13:17 +07
+Test emails: qa-magic-1779167593@muonnoi.org, qa-welcome-1779167593@muonnoi.org
+Inbox monitor needed (Founder/QA): confirm emails arrived at the addresses above

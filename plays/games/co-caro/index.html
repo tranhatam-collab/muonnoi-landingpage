@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Đánh cờ caro 10x10. 5 quân liên tiếp là thắng.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cờ Caro</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .caro-grid { display:grid; grid-template-columns:repeat(10, 28px); grid-template-rows:repeat(10, 28px); gap:1px; background:#475569; padding:2px; border-radius:0.25rem; }
+  .caro-cell { background:#334155; display:flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:bold; cursor:pointer; user-select:none; }
+  .caro-cell.x { color:#3b82f6; }
+  .caro-cell.o { color:#ef4444; }
+  .caro-cell.win { background:#22c55e33; }
+  #status { margin-top:0.5rem; font-size:0.875rem; color:#94a3b8; }
+</style>
+</head>
+<body data-game="co-caro">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="caro-grid" id="caro-grid"></div>
+  <div id="status">Nhấn Bắt đầu</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Cờ Caro</h1>
+    <p>Đánh X trên lưới 10x10. 5 quân liên tiếp là thắng!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'co-caro';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Cờ Caro', desc: 'Lưới 10x10. Bạn đánh X, AI đánh O.' },
+      { title: 'Mục tiêu', desc: 'Tạo 5 quân liên tiếp theo hàng, cột hoặc đường chéo để thắng.' },
+      { title: 'Phòng thủ', desc: 'Ngăn AI tạo 5 quân liên tiếp. Tấn công và phòng thủ!' },
+    ],
+    en: [
+      { title: 'Gomoku', desc: '10x10 grid. You play X, AI plays O.' },
+      { title: 'Goal', desc: 'Make 5 in a row horizontally, vertically or diagonally to win.' },
+      { title: 'Defense', desc: 'Block AI from making 5 in a row. Attack and defend!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('caro-grid');
+  const statusEl = document.getElementById('status');
+
+  const SIZE = 10, WIN = 5;
+  let board = [], isPlaying = false, playerTurn = true, score = 0, level = 1;
+
+  function reset() {
+    board = new Array(SIZE * SIZE).fill('');
+    render();
+  }
+
+  function render() {
+    gridEl.innerHTML = '';
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'caro-cell' + (board[i] === 'X' ? ' x' : board[i] === 'O' ? ' o' : '');
+      cell.textContent = board[i];
+      cell.addEventListener('click', () => onClick(i));
+      gridEl.appendChild(cell);
+    }
+  }
+
+  function checkWin(ch) {
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      if (board[r*SIZE+c] !== ch) continue;
+      for (const [dr,dc] of dirs) {
+        let count = 0, cells = [];
+        for (let i = 0; i < WIN; i++) {
+          const rr = r + dr*i, cc = c + dc*i;
+          if (rr < 0 || rr >= SIZE || cc < 0 || cc >= SIZE) break;
+          if (board[rr*SIZE+cc] === ch) { count++; cells.push(rr*SIZE+cc); }
+          else break;
+        }
+        if (count === WIN) return cells;
+      }
+    }
+    return null;
+  }
+
+  function onClick(i) {
+    if (!isPlaying || !playerTurn || board[i]) return;
+    board[i] = 'X';
+    render();
+    const winCells = checkWin('X');
+    if (winCells) { highlight(winCells); endGame(true); return; }
+    if (board.every(c => c)) { endGame(null); return; }
+    playerTurn = false;
+    statusEl.textContent = LANG === 'vi' ? 'AI đang suy nghĩ...' : 'AI thinking...';
+    setTimeout(aiMove, 400);
+  }
+
+  function aiMove() {
+    if (!isPlaying) return;
+    // Simple AI: block if player has 4, else random near existing
+    let move = findBlockMove('X', 4) || findBlockMove('O', 4) || findBlockMove('X', 3) || findRandom();
+    board[move] = 'O';
+    render();
+    const winCells = checkWin('O');
+    if (winCells) { highlight(winCells); endGame(false); return; }
+    if (board.every(c => c)) { endGame(null); return; }
+    playerTurn = true;
+    statusEl.textContent = LANG === 'vi' ? 'Lượt của bạn' : 'Your turn';
+  }
+
+  function findBlockMove(ch, len) {
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      for (const [dr,dc] of dirs) {
+        let count = 0, empty = -1;
+        for (let i = 0; i < len + 1; i++) {
+          const rr = r + dr*i, cc = c + dc*i;
+          if (rr < 0 || rr >= SIZE || cc < 0 || cc >= SIZE) break;
+          const idx = rr*SIZE+cc;
+          if (board[idx] === ch) count++;
+          else if (!board[idx] && empty === -1) empty = idx;
+          else break;
+        }
+        if (count === len && empty !== -1) return empty;
+      }
+    }
+    return null;
+  }
+
+  function findRandom() {
+    const empties = board.map((v,i) => v ? -1 : i).filter(i => i !== -1);
+    return empties[Math.floor(Math.random() * empties.length)];
+  }
+
+  function highlight(cells) {
+    cells.forEach(i => gridEl.children[i].classList.add('win'));
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true; playerTurn = true;
+    hud.setScore(0); hud.setLevel(1);
+    reset();
+    statusEl.textContent = LANG === 'vi' ? 'Lượt của bạn' : 'Your turn';
+  }
+
+  function endGame(playerWin) {
+    isPlaying = false;
+    if (playerWin) { score += level * 100; hud.setScore(score); level++; hud.setLevel(level); }
+    statusEl.textContent = playerWin === true ? (LANG === 'vi' ? 'Bạn thắng!' : 'You win!') :
+                           playerWin === false ? (LANG === 'vi' ? 'AI thắng!' : 'AI wins!') :
+                           (LANG === 'vi' ? 'Hòa!' : 'Draw!');
+    PlaysSDK.saveScore(GAME_ID, score, { level: playerWin ? level : level });
+    setTimeout(() => {
+      PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { if (playerWin) { reset(); isPlaying = true; playerTurn = true; statusEl.textContent = LANG === 'vi' ? 'Lượt của bạn' : 'Your turn'; } else { location.reload(); } });
+    }, 600);
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

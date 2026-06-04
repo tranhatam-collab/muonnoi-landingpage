@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Gõ chữ nhanh hơn tốc độ rơi.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go Chu — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #type-area { text-align: center; margin: 1rem auto; max-width: 400px; }
+  #type-target { font-size: 2rem; font-weight: 700; color: #f59e0b; min-height: 3rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; }
+  #type-target span.missed { color: #ef4444; }
+  #type-input { width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; border-radius: 8px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; margin-top: 1rem; }
+  #type-score { font-size: 1.5rem; color: #10b981; margin-top: 0.5rem; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="go-chu">
+
+<div id="hud-root"></div>
+<div id="type-area">
+  <div id="type-target"></div>
+  <input type="text" id="type-input" placeholder="Go từ ô day..." autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type word">
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Gõ Chữ</h1>
+    <p>Gõ chữ nhanh hơn tốc độ rơi. Càng nhanh điểm càng cao!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'go-chu';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Gõ Chữ', desc: 'Các từ sẽ xuất hiện ở trên. Gõ đúng từ đó vào ô nhập liệu trước khi từ biến mất khỏi màn hình.' },
+      { title: 'Tốc độ', desc: 'Càng chơi từ biến mất càng nhanh. Canh nhịp là rất quan trọng!' },
+      { title: 'Vô hạn', desc: 'Không có màn cuối. Từ càng dài càng nhiều điểm. Gõ thật nhanh!' },
+    ],
+    en: [
+      { title: 'Type Rush', desc: 'Words appear at the top. Type them correctly before they disappear from screen.' },
+      { title: 'Speed', desc: 'Words disappear faster as you play. Timing is crucial!' },
+      { title: 'Endless', desc: 'No final level. Longer words = more points. Type as fast as you can!' },
+    ],
+  };
+  const WORDS_VI = ['viet','nam','muon','noi','choi','vui','nhanh','cham','dong','tay','bac','nam','sao','bien','nui','song','ca','chim','hoa','la'];
+  const WORDS_EN = ['play','game','fast','word','type','code','web','cloud','sky','sea','fire','wind','moon','star','tree','bird','fish','love','hope','dream'];
+
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const targetEl = document.getElementById('type-target');
+  const inputEl = document.getElementById('type-input');
+
+  let score = 0, level = 1, lives = 3, isPlaying = false;
+  let currentWord = '', timeLeft = 0, wordTimer = null, spawnTimer = null;
+  let wordSpeed = 3000;
+
+  function pickWord() {
+    const arr = LANG === 'vi' ? WORDS_VI : WORDS_EN;
+    let w = arr[Math.floor(Math.random() * arr.length)];
+    if (level > 3) w += arr[Math.floor(Math.random() * arr.length)];
+    if (level > 6) w += arr[Math.floor(Math.random() * arr.length)];
+    return w;
+  }
+
+  function showWord() {
+    if (!isPlaying) return;
+    currentWord = pickWord();
+    targetEl.innerHTML = currentWord.split('').map(c => `<span>${c}</span>`).join('');
+    timeLeft = wordSpeed;
+    inputEl.value = ''; inputEl.focus();
+    clearInterval(wordTimer);
+    wordTimer = setInterval(() => {
+      timeLeft -= 100;
+      if (timeLeft <= 0) {
+        lives--; clearInterval(wordTimer);
+        if (lives <= 0) endGame(); else showWord();
+      }
+    }, 100);
+  }
+
+  function onInput() {
+    if (!isPlaying) return;
+    const val = inputEl.value.toLowerCase();
+    const spans = targetEl.querySelectorAll('span');
+    for (let i = 0; i < spans.length; i++) {
+      spans[i].className = val[i] === currentWord[i] ? '' : (i < val.length ? 'missed' : '');
+    }
+    if (val === currentWord) {
+      score += currentWord.length * 10 + Math.floor(timeLeft / 100);
+      hud.setScore(score);
+      if (score % 100 === 0) { level++; wordSpeed = Math.max(1200, wordSpeed * 0.93); hud.setLevel(level); }
+      clearInterval(wordTimer); showWord();
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    score = 0; level = 1; lives = 3; wordSpeed = 3000; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); showWord();
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(wordTimer); clearInterval(spawnTimer);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  inputEl.addEventListener('input', onInput);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

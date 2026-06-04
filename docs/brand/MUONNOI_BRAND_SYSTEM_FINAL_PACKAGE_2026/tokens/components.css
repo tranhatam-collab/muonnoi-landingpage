@@ -1,0 +1,77 @@
+/* Muon Noi component extensions */
+
+.mn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--mn-bg);
+  border-bottom: 1px solid var(--mn-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.mn-story-card {
+  display: grid;
+  gap: 12px;
+}
+.mn-story-card img, .mn-story-card .mn-story-image {
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--mn-beige), var(--mn-bg-soft));
+}
+.mn-story-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--mn-charcoal);
+}
+.mn-story-meta {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.mn-profile-card {
+  text-align: center;
+}
+.mn-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 999px;
+  border: 2px solid var(--mn-gold);
+  background: linear-gradient(135deg, var(--mn-whisper), var(--mn-bg-soft));
+  margin: 0 auto 12px;
+}
+
+.mn-journey-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.mn-stage-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.mn-map-card {
+  border-radius: 16px;
+  border: 1px solid var(--mn-border);
+  background: linear-gradient(180deg, #FFFFFF, var(--mn-cream));
+  padding: 24px;
+}
+
+.mn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}

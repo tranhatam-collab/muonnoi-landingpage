@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Trượt qua lại tránh va chạm.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Truot Duong — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #slide-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  .slide-controls { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+  .slide-controls button { width: 60px; height: 60px; font-size: 1.5rem; border-radius: 10px; background: #1f2937; border: 1px solid #374151; color: #e5e7eb; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+  .slide-controls button:active { background: #374151; transform: scale(0.95); }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="truot-duong">
+
+<div id="hud-root"></div>
+<canvas id="slide-canvas" width="300" height="400" aria-label="Slide canvas"></canvas>
+<div class="slide-controls">
+  <button id="btn-left" aria-label="Left">&#9664;</button>
+  <button id="btn-right" aria-label="Right">&#9654;</button>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Trượt Đường</h1>
+    <p>Trượt qua lại để tránh va chạm. Càng nhanh càng khó!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'truot-duong';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Trượt Đường', desc: 'Dùng nút trái/phải hoặc chạm bên trái/phải màn hình để di chuyển. Tránh các vật cản rơi từ trên xuống.' },
+      { title: 'Tốc độ tăng', desc: 'Vật cản rơi nhanh hơn và nhiều hơn. Con đường có thể có 3 làn xe.' },
+      { title: 'Vô hạn', desc: 'Không có đích. Tránh càng xa càng tốt!' },
+    ],
+    en: [
+      { title: 'Lane Slide', desc: 'Use left/right buttons or tap sides to move. Avoid obstacles falling from above.' },
+      { title: 'Speed Up', desc: 'Obstacles fall faster and denser. Road may have 3 lanes.' },
+      { title: 'Endless', desc: 'No destination. Dodge as far as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('slide-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let lanes = 3, playerLane = 1, obstacles = [], score = 0, level = 1, isPlaying = false;
+  let speed = 3, laneW = 0, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 360); const maxH = Math.min(window.innerHeight * 0.5, 480); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); laneW = canvas.width / lanes; }
+
+  function spawnObs() {
+    const lane = Math.floor(Math.random() * lanes);
+    obstacles.push({ lane, y: -30, h: 20 + Math.random() * 20, w: laneW * 0.6 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Lanes
+    ctx.strokeStyle = '#374151'; ctx.lineWidth = 1;
+    for (let i = 1; i < lanes; i++) { ctx.beginPath(); ctx.moveTo(i * laneW, 0); ctx.lineTo(i * laneW, canvas.height); ctx.stroke(); }
+    // Player
+    const px = playerLane * laneW + laneW / 2 - 12;
+    const py = canvas.height - 50;
+    ctx.fillStyle = '#10b981'; ctx.fillRect(px, py, 24, 36);
+    // Obstacles
+    ctx.fillStyle = '#ef4444';
+    for (const o of obstacles) {
+      const ox = o.lane * laneW + (laneW - o.w) / 2;
+      ctx.fillRect(ox, o.y, o.w, o.h);
+    }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const o = obstacles[i]; o.y += speed;
+      if (o.y > canvas.height) { obstacles.splice(i, 1); score += 5; continue; }
+      const py = canvas.height - 50;
+      const px = playerLane * laneW + laneW / 2 - 12;
+      const ox = o.lane * laneW + (laneW - o.w) / 2;
+      if (o.lane === playerLane && o.y + o.h > py && o.y < py + 36) { endGame(); return; }
+    }
+    if (!obstacles.length || Math.random() < 0.02) spawnObs();
+    if (score > 0 && score % 80 === 0) { level++; speed = Math.min(10, speed + 0.3); if (lanes < 4) lanes++; resize(); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function moveLeft() { if (playerLane > 0) playerLane--; }
+  function moveRight() { if (playerLane < lanes - 1) playerLane++; }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); lanes = 3; playerLane = 1; obstacles = []; score = 0; level = 1; speed = 3; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-left').addEventListener('pointerdown', moveLeft);
+  document.getElementById('btn-right').addEventListener('pointerdown', moveRight);
+  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft(); if (e.key === 'ArrowRight' || e.key === 'd') moveRight(); });
+  canvas.addEventListener('pointerdown', (e) => { const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) moveLeft(); else moveRight(); });
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

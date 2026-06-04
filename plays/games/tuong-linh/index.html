@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Điều quân chiến đấu với tài nguyên hạn chế.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tuong Linh — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #war-grid { display: grid; gap: 2px; margin: 1rem auto; max-width: 340px; touch-action: none; }
+  .w-cell { aspect-ratio: 1; border-radius: 4px; background: #1f2937; border: 1px solid #374151; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; transition: transform 0.1s; }
+  .w-cell:active { transform: scale(0.92); }
+  .w-cell.ally { background: #3b82f633; color: #60a5fa; }
+  .w-cell.enemy { background: #ef444433; color: #f87171; }
+  .w-cell.resource { background: #f59e0b33; color: #fbbf24; }
+  .w-cell.selected { border-color: #f59e0b; box-shadow: 0 0 6px #f59e0b66; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="tuong-linh">
+
+<div id="hud-root"></div>
+<div id="war-grid"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tuong Linh</h1>
+    <p>Điều quân chiến đấu với tài nguyên hạn chế. Chiem dat, thử thach, chien thang.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'tuong-linh';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tướng Lĩnh', desc: 'Lưới 6x6 với các ô: đất trống (xanh dương), quân địch (đỏ), tài nguyên (vàng). Chạm ô xanh để chiếm, chạm ô vàng để thử thách.' },
+      { title: 'Hạn chế', desc: 'Mỗi lượt chỉ được chiếm hoặc thử thách 1 ô. Quân địch sẽ xuất hiện ngẫu nhiên sau mỗi lượt.' },
+      { title: 'Vô hạn', desc: 'Không có màn cuối. Càng chơi quân địch càng nhiều. Sống lâu nhất có thể!' },
+    ],
+    en: [
+      { title: 'Commander', desc: '6x6 grid: empty land (blue), enemy (red), resources (gold). Tap blue to claim, tap gold to harvest.' },
+      { title: 'Limited', desc: 'Each turn only 1 claim or harvest. Enemies spawn randomly after each turn.' },
+      { title: 'Endless', desc: 'No final level. More enemies spawn over time. Survive as long as you can!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('war-grid');
+
+  let size = 6, grid = [], score = 0, level = 1, turns = 0, resources = 0, isPlaying = false;
+
+  function genGrid() {
+    const g = [];
+    for (let y = 0; y < size; y++) {
+      const row = [];
+      for (let x = 0; x < size; x++) {
+        const r = Math.random();
+        row.push({ x, y, type: r < 0.6 ? 'empty' : (r < 0.85 ? 'enemy' : 'resource'), claimed: false });
+      }
+      g.push(row);
+    }
+    g[0][0] = { x: 0, y: 0, type: 'ally', claimed: true };
+    return g;
+  }
+
+  function build() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const cell = document.createElement('div');
+        const g = grid[y][x];
+        cell.className = 'w-cell' + (g.type === 'ally' ? ' ally' : g.type === 'enemy' ? ' enemy' : g.type === 'resource' ? ' resource' : '');
+        cell.textContent = g.type === 'ally' ? '🛡️' : g.type === 'enemy' ? '⚔️' : g.type === 'resource' ? '💰' : '';
+        cell.dataset.x = x; cell.dataset.y = y;
+        cell.addEventListener('pointerdown', () => onTap(x, y));
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  function updateCell(x, y) {
+    const c = board.children[y * size + x];
+    const g = grid[y][x];
+    c.className = 'w-cell' + (g.type === 'ally' ? ' ally' : g.type === 'enemy' ? ' enemy' : g.type === 'resource' ? ' resource' : '');
+    c.textContent = g.type === 'ally' ? '🛡️' : g.type === 'enemy' ? '⚔️' : g.type === 'resource' ? '💰' : '';
+  }
+
+  function onTap(x, y) {
+    if (!isPlaying) return;
+    const g = grid[y][x];
+    if (g.type === 'enemy') { score += 5; resources -= 1; if (resources < 0) { endGame(); return; } }
+    else if (g.type === 'resource') { resources += 3; score += 10; g.type = 'empty'; }
+    else if (g.type === 'empty') { g.type = 'ally'; score += 2; }
+    else return;
+    turns++;
+    if (turns % 8 === 0) { level++; size = Math.min(size + 1, 8); grid = genGrid(); build(); hud.setLevel(level); }
+    else { updateCell(x, y); spawnEnemy(); }
+    hud.setScore(score);
+  }
+
+  function spawnEnemy() {
+    const empties = [];
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (grid[y][x].type === 'empty') empties.push({ x, y });
+    if (!empties.length) return;
+    const c = empties[Math.floor(Math.random() * empties.length)];
+    grid[c.y][c.x].type = 'enemy';
+    updateCell(c.x, c.y);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    size = 6; grid = genGrid(); score = 0; level = 1; turns = 0; resources = 5; isPlaying = true;
+    build(); hud.setScore(0); hud.setLevel(1);
+  }
+
+  function endGame() {
+    isPlaying = false;
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Nhấn để mở dù và hạ cánh an toàn qua các nền tảng.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Nhảy Dù</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; height:400px; background:#1e293b; border-radius:0.5rem; position:relative; overflow:hidden; margin-bottom:1rem; }
+  canvas { display:block; width:100%; height:100%; }
+</style>
+</head>
+<body data-game="nhay-du">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <canvas id="game-canvas" width="320" height="400"></canvas>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Nhảy Dù</h1>
+    <p>Nhấn để mở dù và hạ cánh an toàn. Né các vật cản trên đường!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'nhay-du';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Nhảy Dù', desc: 'Nhân vật rơi từ trên xuống. Nhấn để mở dù giảm tốc độ rơi.' },
+      { title: 'Hạ cánh', desc: 'Hạ cánh an toàn trên nền tảng màu xanh. Tránh chim và khinh khí cầu.' },
+      { title: 'Điểm', desc: 'Hạ cánh càng gần giữa nền tảng càng nhiều điểm. Va chạm là thua!' },
+    ],
+    en: [
+      { title: 'Parachute Jump', desc: 'The character falls from above. Tap to open parachute and slow descent.' },
+      { title: 'Landing', desc: 'Land safely on green platforms. Avoid birds and hot air balloons.' },
+      { title: 'Score', desc: 'Landing closer to platform center = more points. Collision = game over!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let score = 0, level = 1, isPlaying = false;
+  let player = { x: 160, y: -20, vy: 2, r: 8, parachute: false };
+  let platforms = [], obstacles = [];
+  let scrollY = 0, targetY = 1200;
+
+  function resetLevel() {
+    player = { x: 160, y: -20, vy: 2, r: 8, parachute: false };
+    platforms = [];
+    obstacles = [];
+    scrollY = 0;
+    const platCount = 3 + level;
+    for (let i = 0; i < platCount; i++) {
+      platforms.push({ x: 30 + Math.random() * (canvas.width - 100), y: 300 + i * 250, w: 60 + Math.random() * 60 });
+    }
+    for (let i = 0; i < level; i++) {
+      obstacles.push({ x: Math.random() * (canvas.width - 20), y: 400 + Math.random() * (platCount * 250 - 200), w: 20, h: 10, vx: (Math.random() - 0.5) * 2 });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(0, -scrollY);
+    // Platforms
+    platforms.forEach(p => {
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(p.x, p.y, p.w, 10);
+    });
+    // Obstacles
+    obstacles.forEach(o => {
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    });
+    // Player
+    ctx.fillStyle = player.parachute ? '#3b82f6' : '#eab308';
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
+    if (player.parachute) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.arc(player.x, player.y - 12, 16, Math.PI, 0); ctx.fill();
+    }
+    ctx.restore();
+    // Ground indicator
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px sans-serif';
+    ctx.fillText((LANG === 'vi' ? 'Độ cao: ' : 'Altitude: ') + Math.max(0, Math.floor((1200 - (player.y + scrollY)) / 10)), 10, 20);
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    player.vy += 0.05;
+    if (player.parachute) player.vy = Math.max(player.vy, 1.5);
+    player.y += player.vy;
+
+    // Auto scroll
+    if (player.y > canvas.height * 0.5 + scrollY) scrollY = player.y - canvas.height * 0.5;
+
+    // Move obstacles
+    obstacles.forEach(o => {
+      o.x += o.vx;
+      if (o.x < 0 || o.x > canvas.width - o.w) o.vx *= -1;
+      if (player.x > o.x && player.x < o.x + o.w && player.y > o.y && player.y < o.y + o.h) endGame();
+    });
+
+    // Check platform landing
+    platforms.forEach(p => {
+      if (player.vy > 0 && player.x > p.x && player.x < p.x + p.w && player.y >= p.y - player.r && player.y <= p.y + 10) {
+        const center = p.x + p.w / 2;
+        const dist = Math.abs(player.x - center);
+        score += Math.floor((p.w / 2 - dist) * 2 + level * 10);
+        hud.setScore(score);
+        level++;
+        hud.setLevel(level);
+        resetLevel();
+      }
+    });
+
+    // Missed all platforms
+    if (player.y > scrollY + canvas.height + 100) endGame();
+
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    resetLevel();
+    update();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  canvas.addEventListener('pointerdown', () => { if (isPlaying) player.parachute = true; });
+  canvas.addEventListener('pointerup', () => { if (isPlaying) player.parachute = false; });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

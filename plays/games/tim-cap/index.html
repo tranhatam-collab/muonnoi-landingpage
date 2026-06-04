@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tìm các cặp thẻ giống nhau.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tim Cap — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #pair-grid { display: grid; gap: 6px; margin: 1rem auto; max-width: 360px; touch-action: none; }
+  .pair-cell { aspect-ratio: 0.8; border-radius: 8px; background: #1f2937; border: 1px solid #374151; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+  .pair-cell.flipped { background: #111827; transform: rotateY(0); }
+  .pair-cell.matched { background: #10b98133; border-color: #10b981; cursor: default; }
+  .pair-cell.hidden { color: transparent; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="tim-cap">
+
+<div id="hud-root"></div>
+<div id="pair-grid"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tim Cap</h1>
+    <p>Lat các the để tìm cặp giống nhau. Nho vi tri va tim nhanh!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'tim-cap';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tim Cap', desc: 'Cac the bi che giấu. Nhan để lật lên. Tim hai the có biểu tượng giống nhau. Cang ít lượt lat càng nhiều diem.' },
+      { title: 'Thoi gian', desc: 'Ban có 60 giay. Càng về sáu lưới càng lớn va the càng nhiều.' },
+      { title: 'Vô hạn', desc: 'Sang màn mỗi sáu khi tim het. Thu thach giới hạn cua ban!' },
+    ],
+    en: [
+      { title: 'Match Pairs', desc: 'Cards are hidden. Tap to flip. Find two cards with matching icons. Fewer flips = more points.' },
+      { title: 'Time', desc: 'You have 60 seconds. Later grids are larger with more cards.' },
+      { title: 'Endless', desc: 'New board after clearing. Challenge your memory limit!' },
+    ],
+  };
+  const ICONS = ['🍎','🚀','🐱','🌸','⚽','🎵','🌙','🔥','🍀','⭐','🦋','🌊'];
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('pair-grid');
+
+  let cards = [], flipped = [], matched = 0, score = 0, level = 1, timeLeft = 60, isPlaying = false, timerInterval = null;
+  let cols = 4, rows = 3, canFlip = true;
+
+  function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+  function genCards() {
+    const total = cols * rows;
+    const used = ICONS.slice(0, total / 2);
+    const deck = shuffle([...used, ...used]);
+    return deck.map((icon, i) => ({ id: i, icon, matched: false }));
+  }
+
+  function build() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    for (const c of cards) {
+      const cell = document.createElement('div');
+      cell.className = 'pair-cell hidden';
+      cell.textContent = c.icon;
+      cell.dataset.id = c.id;
+      cell.addEventListener('pointerdown', () => onTap(c.id));
+      board.appendChild(cell);
+    }
+  }
+
+  function onTap(id) {
+    if (!isPlaying || !canFlip) return;
+    const c = cards[id];
+    if (c.matched || flipped.includes(id)) return;
+    const cell = board.children[id];
+    cell.classList.remove('hidden');
+    flipped.push(id);
+    if (flipped.length === 2) {
+      canFlip = false;
+      const a = cards[flipped[0]], b = cards[flipped[1]];
+      if (a.icon === b.icon) {
+        a.matched = b.matched = true;
+        board.children[flipped[0]].classList.add('matched');
+        board.children[flipped[1]].classList.add('matched');
+        matched++; score += 20 + timeLeft;
+        flipped = []; canFlip = true;
+        if (matched >= cards.length / 2) { setTimeout(completeLevel, 300); }
+      } else {
+        setTimeout(() => {
+          board.children[flipped[0]].classList.add('hidden');
+          board.children[flipped[1]].classList.add('hidden');
+          flipped = []; canFlip = true;
+        }, 600);
+      }
+      hud.setScore(score);
+    }
+  }
+
+  function completeLevel() {
+    score += timeLeft * 2;
+    hud.setScore(score); level++;
+    if (cols * rows < 20) { if (cols <= rows) cols++; else rows++; }
+    timeLeft = Math.max(30, 65 - level * 2);
+    matched = 0; flipped = []; canFlip = true;
+    cards = genCards(); build(); hud.setLevel(level);
+  }
+
+  function tick() { timeLeft--; if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); } }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    cols = 4; rows = 3; score = 0; level = 1; timeLeft = 60; matched = 0; flipped = []; canFlip = true; isPlaying = true;
+    cards = genCards(); build(); hud.setScore(0); hud.setLevel(1);
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

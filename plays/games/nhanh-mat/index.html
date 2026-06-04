@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tìm điểm khác biệt trong thời gian ngắn.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nhanh Mat — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #spot-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #spot-timer { text-align: center; font-size: 1.2rem; color: #f59e0b; margin: 0.5rem 0; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="nhanh-mat">
+
+<div id="hud-root"></div>
+<div id="spot-timer">15s</div>
+<canvas id="spot-canvas" width="320" height="320" aria-label="Spot canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Nhanh Mat</h1>
+    <p>Tim diem khac biet giua 2 hinh nhanh nhất có thể.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'nhanh-mat';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Nhanh Mắt', desc: 'Hai hình giống nhau, nhưng có một điểm khác biệt. Chạm vào điểm đó để qua màn.' },
+      { title: 'Thời gian giảm', desc: 'Càng về sau thời gian tìm càng ít. Sai hoặc hết giờ là thua.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn số màn. Tìm càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Sharp Eye', desc: 'Two nearly identical images with one difference. Tap the different spot to pass.' },
+      { title: 'Less Time', desc: 'Later levels give less time. Wrong tap or timeout = game over.' },
+      { title: 'Endless', desc: 'No level limit. Find as many differences as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('spot-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const timerEl = document.getElementById('spot-timer');
+
+  let spots = [], diffIdx = 0, score = 0, level = 1, timeLeft = 15, isPlaying = false, timerInterval = null;
+  let cols = 4, rows = 4;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function genGrid() {
+    spots = [];
+    const cellW = canvas.width / cols; const cellH = canvas.height / rows;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) spots.push({ x: c * cellW, y: r * cellH, w: cellW, h: cellH, isDiff: false });
+    diffIdx = Math.floor(Math.random() * spots.length);
+    spots[diffIdx].isDiff = true;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of spots) {
+      ctx.fillStyle = s.isDiff ? '#374151' : '#1f2937';
+      ctx.fillRect(s.x + 1, s.y + 1, s.w - 2, s.h - 2);
+      ctx.fillStyle = '#e5e7eb'; ctx.font = `${Math.min(s.w, s.h) * 0.6}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(s.isDiff ? '◆' : '●', s.x + s.w / 2, s.y + s.h / 2);
+    }
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const s = spots[diffIdx];
+    if (x > s.x && x < s.x + s.w && y > s.y && y < s.y + s.h) {
+      score += Math.floor(timeLeft) * 10 + level * 5;
+      hud.setScore(score);
+      if (score % 100 === 0) { level++; if (cols * rows < 36) { if (cols <= rows) cols++; else rows++; } timeLeft = Math.max(5, 18 - level); hud.setLevel(level); }
+      clearInterval(timerInterval); nextRound();
+    } else { endGame(); }
+  }
+
+  function nextRound() { genGrid(); draw(); timeLeft = Math.max(5, 18 - level); timerEl.textContent = timeLeft + 's'; timerInterval = setInterval(tick, 1000); }
+
+  function tick() { timeLeft--; timerEl.textContent = timeLeft + 's'; if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); } }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); cols = 4; rows = 4; score = 0; level = 1; timeLeft = 15; isPlaying = true;
+    genGrid(); draw(); hud.setScore(0); hud.setLevel(1); timerEl.textContent = '15s';
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

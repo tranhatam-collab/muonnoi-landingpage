@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Phản xạ với hai màu khác nhau.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phan Xa Doi — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #dual-board { display: flex; gap: 8px; justify-content: center; margin: 1rem auto; max-width: 360px; touch-action: none; }
+  .dual-lane { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .dual-cell { aspect-ratio: 1; border-radius: 8px; background: #1f2937; border: 1px solid #374151; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.1s; }
+  .dual-cell:active { transform: scale(0.92); }
+  .dual-cell.red { background: #ef4444; box-shadow: 0 0 10px #ef444466; }
+  .dual-cell.blue { background: #3b82f6; box-shadow: 0 0 10px #3b82f666; }
+  .dual-cell.wrong { animation: shake 0.3s; background: #6b7280; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { margin-bottom: 0.5rem; font-size: 1.4rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="phan-xa-doi">
+
+<div id="hud-root"></div>
+<div id="dual-board"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1 data-i18n="name">Phản Xạ Đôi</h1>
+    <p data-i18n="desc">Hai màu, hai cột. Chạm đúng màu trước khi biến mất.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'phan-xa-doi';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Phản Xạ Đôi', desc: 'Cột TRÁI chỉ có ô ĐỎ. Cột PHẢI chỉ có ô XANH. Chạm đúng cột với ô đúng màu.' },
+      { title: 'Tốc độ tăng', desc: 'Càng chơi, ô xuất hiện càng nhanh và biến mất càng sớm. Đừng chạm nhầm cột!' },
+      { title: 'Vô hạn', desc: 'Không có màn cuối. Đua kỷ lục số lần chạm đúng liên tiếp!' },
+    ],
+    en: [
+      { title: 'Dual Reflex', desc: 'LEFT column = RED only. RIGHT column = BLUE only. Tap the correct column for each colored cell.' },
+      { title: 'Speed Rises', desc: 'Cells appear faster and fade quicker. Do not tap the wrong column!' },
+      { title: 'Endless', desc: 'No final level. Race your streak of correct taps!' },
+    ],
+  };
+
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('dual-board');
+
+  let score = 0, level = 1, lives = 3, streak = 0, isPlaying = false;
+  let spawnMs = 900, fadeMs = 1800, spawnTimer = null;
+  const active = new Map(); // cellEl -> timeoutId
+
+  function buildBoard() {
+    board.innerHTML = '';
+    const lanes = [document.createElement('div'), document.createElement('div')];
+    lanes.forEach((l, i) => { l.className = 'dual-lane'; l.dataset.lane = i; board.appendChild(l); });
+  }
+
+  function spawn() {
+    if (!isPlaying) return;
+    const color = Math.random() < 0.5 ? 'red' : 'blue';
+    const laneIdx = color === 'red' ? 0 : 1;
+    const lane = board.children[laneIdx];
+    const cell = document.createElement('div');
+    cell.className = 'dual-cell ' + color;
+    cell.textContent = color === 'red' ? '🔴' : '🔵';
+    cell.dataset.color = color;
+    lane.insertBefore(cell, lane.firstChild);
+
+    const t = setTimeout(() => {
+      if (!isPlaying) return;
+      cell.classList.add('wrong');
+      setTimeout(() => cell.remove(), 300);
+      active.delete(cell);
+      lives--;
+      streak = 0;
+      if (lives <= 0) endGame();
+    }, fadeMs);
+    active.set(cell, t);
+
+    // Remove old cells if too many
+    while (lane.children.length > 6) lane.lastChild.remove();
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const cell = e.target.closest('.dual-cell');
+    if (!cell || !active.has(cell)) return;
+    clearTimeout(active.get(cell));
+    active.delete(cell);
+    const lane = cell.parentElement.dataset.lane;
+    const color = cell.dataset.color;
+    const correct = (color === 'red' && lane === '0') || (color === 'blue' && lane === '1');
+    if (!correct) {
+      cell.classList.add('wrong'); lives--; streak = 0;
+    } else {
+      score++; streak++;
+      if (streak % 10 === 0) { level++; spawnMs = Math.max(350, spawnMs * 0.92); fadeMs = Math.max(700, fadeMs * 0.94); hud.setLevel(level); }
+    }
+    hud.setScore(score);
+    cell.remove();
+    if (lives <= 0) endGame();
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    score = 0; level = 1; lives = 3; streak = 0; spawnMs = 900; fadeMs = 1800;
+    active.forEach(t => clearTimeout(t)); active.clear();
+    buildBoard(); hud.setScore(0); hud.setLevel(1); isPlaying = true;
+    spawnTimer = setInterval(spawn, spawnMs);
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(spawnTimer);
+    active.forEach(t => clearTimeout(t)); active.clear();
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  board.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

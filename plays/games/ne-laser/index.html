@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Né các chùm laser ngày càng dày.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ne Laser — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #laser-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="ne-laser">
+
+<div id="hud-root"></div>
+<canvas id="laser-canvas" width="320" height="320" aria-label="Laser canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Ne Laser</h1>
+    <p>Ne các chum laser ngày càng dày đặc.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'ne-laser';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Ne Laser', desc: 'Keo nhấn vật để né các chum laser ngang va doc. Cham laser la mất mang.' },
+      { title: 'Day dac', desc: 'Laser xuất hiện càng nhiều va chuyển động càng nhanh. Co ca laser di chuyển!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Ton tai lau nhat có thể!' },
+    ],
+    en: [
+      { title: 'Dodge Laser', desc: 'Drag character to dodge horizontal and vertical lasers. Touch = lose life.' },
+      { title: 'Dense', desc: 'More lasers appear and move faster. Some lasers are moving!' },
+      { title: 'Endless', desc: 'No limit. Survive as long as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('laser-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let player = { x: 160, y: 160, r: 8 }, lasers = [], score = 0, level = 1, lives = 3, isPlaying = false;
+  let laserSpeed = 1, spawnRate = 0.015, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function spawnLaser() {
+    const horiz = Math.random() < 0.5;
+    if (horiz) lasers.push({ x: 0, y: 20 + Math.random() * (canvas.height - 40), w: canvas.width, h: 4, dx: 0, dy: 0, active: false, timer: 30 + Math.random() * 40 });
+    else lasers.push({ x: 20 + Math.random() * (canvas.width - 40), y: 0, w: 4, h: canvas.height, dx: 0, dy: 0, active: false, timer: 30 + Math.random() * 40 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Warning
+    for (const l of lasers) {
+      if (!l.active) {
+        ctx.strokeStyle = '#f59e0b66'; ctx.lineWidth = 2;
+        if (l.w > l.h) { ctx.beginPath(); ctx.moveTo(0, l.y); ctx.lineTo(canvas.width, l.y); ctx.stroke(); }
+        else { ctx.beginPath(); ctx.moveTo(l.x, 0); ctx.lineTo(l.x, canvas.height); ctx.stroke(); }
+      }
+    }
+    // Active lasers
+    ctx.fillStyle = '#ef4444';
+    for (const l of lasers) { if (l.active) ctx.fillRect(l.x, l.y, l.w, l.h); }
+    // Player
+    ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
+    // Lives
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (let i = lasers.length - 1; i >= 0; i--) {
+      const l = lasers[i];
+      if (!l.active) { l.timer--; if (l.timer <= 0) l.active = true; }
+      else {
+        if (l.w > l.h) { l.x += l.dx; } else { l.y += l.dy; }
+        if (l.x < -100 || l.x > canvas.width + 100 || l.y < -100 || l.y > canvas.height + 100) { lasers.splice(i, 1); score += 5; continue; }
+        // Collision
+        if (player.x > l.x && player.x < l.x + l.w && player.y > l.y && player.y < l.y + l.h) {
+          lasers.splice(i, 1); lives--; score = Math.max(0, score - 10);
+          if (lives <= 0) { endGame(); return; }
+          continue;
+        }
+      }
+    }
+    if (Math.random() < spawnRate) spawnLaser();
+    if (score > 0 && score % 60 === 0) { level++; laserSpeed += 0.3; spawnRate = Math.min(0.05, spawnRate + 0.003); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onMove(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    player.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    player.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); lasers = []; score = 0; level = 1; lives = 3; laserSpeed = 1; spawnRate = 0.015; isPlaying = true;
+    player.x = canvas.width / 2; player.y = canvas.height / 2;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerdown', onMove);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

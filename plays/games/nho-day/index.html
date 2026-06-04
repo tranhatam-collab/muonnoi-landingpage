@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Lặp lại dãy hiệu ứng.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nho Day — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #seq-board { display: grid; gap: 8px; margin: 1rem auto; max-width: 300px; touch-action: none; }
+  .seq-cell { aspect-ratio: 1; border-radius: 10px; background: #1f2937; border: 1px solid #374151; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .seq-cell:active { transform: scale(0.95); }
+  .seq-cell.lit { box-shadow: 0 0 12px; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="nho-day">
+
+<div id="hud-root"></div>
+<div id="seq-board"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Nhớ Dãy</h1>
+    <p>Lặp lại dãy màu. Càng dài càng khó!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'nho-day';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Nhớ Dãy', desc: '4 ô màu sẽ sáng lên theo một dãy. Quan sát kỹ rồi nhấn lại đúng thứ tự.' },
+      { title: 'Dài dần', desc: 'Mỗi lần đúng, dãy sẽ thêm 1 bước mới. Càng sáu dãy càng dài và nhanh.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Thu xem bạn nhỏ được bao nhiều buoc!' },
+    ],
+    en: [
+      { title: 'Sequence', desc: '4 colored cells will light up in sequence. Watch carefully then repeat in correct order.' },
+      { title: 'Gets Longer', desc: 'Each correct round adds 1 more step. Deeper levels = longer and faster sequences.' },
+      { title: 'Endless', desc: 'No limit. See how many steps you can remember!' },
+    ],
+  };
+  const COLORS = ['#ef4444','#3b82f6','#10b981','#f59e0b'];
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('seq-board');
+
+  let sequence = [], playerIdx = 0, score = 0, level = 1, isPlaying = false, isShowing = false;
+  let showSpeed = 600;
+
+  function build() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    for (let i = 0; i < 4; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'seq-cell';
+      cell.dataset.idx = i;
+      cell.addEventListener('pointerdown', () => onTap(i));
+      board.appendChild(cell);
+    }
+  }
+
+  function light(idx) {
+    const cell = board.children[idx];
+    cell.style.background = COLORS[idx];
+    cell.classList.add('lit');
+    setTimeout(() => { cell.style.background = ''; cell.classList.remove('lit'); }, 300);
+  }
+
+  function showSeq() {
+    isShowing = true; playerIdx = 0;
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i >= sequence.length) { clearInterval(interval); isShowing = false; return; }
+      light(sequence[i]); i++;
+    }, showSpeed);
+  }
+
+  function addStep() {
+    sequence.push(Math.floor(Math.random() * 4));
+    showSeq();
+  }
+
+  function onTap(idx) {
+    if (!isPlaying || isShowing) return;
+    light(idx);
+    if (idx !== sequence[playerIdx]) { endGame(); return; }
+    playerIdx++;
+    if (playerIdx >= sequence.length) {
+      score += sequence.length * 10;
+      hud.setScore(score);
+      if (sequence.length % 5 === 0) { level++; showSpeed = Math.max(250, showSpeed * 0.92); hud.setLevel(level); }
+      setTimeout(addStep, 500);
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    sequence = []; score = 0; level = 1; showSpeed = 600; isPlaying = true;
+    build(); hud.setScore(0); hud.setLevel(1); addStep();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Nghe âm thanh và chạm đúng nút tương ứng. Tốc độ tăng dần.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Phản Xạ Âm Thanh</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .sound-btn { width:80px; height:80px; border:none; border-radius:50%; font-size:1.5rem; cursor:pointer; opacity:0.8; transition:opacity 0.15s, transform 0.1s; margin:0 0.5rem; }
+  .sound-btn.active { opacity:1; transform:scale(1.1); }
+  .sound-btn:nth-child(1) { background:#ef4444; }
+  .sound-btn:nth-child(2) { background:#3b82f6; }
+  .sound-btn:nth-child(3) { background:#eab308; }
+  .btn-row { display:flex; justify-content:center; margin:1rem 0; }
+  #status { font-size:0.875rem; color:#94a3b8; }
+</style>
+</head>
+<body data-game="phan-xa-am-thanh">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="btn-row">
+    <button class="sound-btn" data-tone="0">🔊</button>
+    <button class="sound-btn" data-tone="1">🔊</button>
+    <button class="sound-btn" data-tone="2">🔊</button>
+  </div>
+  <div id="status">Nhấn Bắt đầu</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Phản Xạ Âm Thanh</h1>
+    <p>Nghe âm thanh và chạm đúng nút. Càng nhanh càng nhiều điểm!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'phan-xa-am-thanh';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Phản Xạ Âm Thanh', desc: '3 nút sẽ phát âm thanh khác nhau. Hãy nghe kỹ.' },
+      { title: 'Lặp lại', desc: 'Sau khi dãy âm kết thúc, nhấn các nút theo đúng thứ tự đã nghe.' },
+      { title: 'Tốc độ', desc: 'Càng về sau dãy âm càng dài và phát càng nhanh.' },
+    ],
+    en: [
+      { title: 'Sound Reflex', desc: '3 buttons play different sounds. Listen carefully.' },
+      { title: 'Repeat', desc: 'After the sound sequence ends, press the buttons in the same order.' },
+      { title: 'Speed', desc: 'Later levels have longer and faster sequences.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const buttons = document.querySelectorAll('.sound-btn');
+  const statusEl = document.getElementById('status');
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const freqs = [261.63, 329.63, 392.00]; // C4, E4, G4
+
+  function playTone(idx, dur = 300) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freqs[idx];
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur/1000);
+    osc.stop(audioCtx.currentTime + dur/1000);
+  }
+
+  let sequence = [], playerIdx = 0, score = 0, level = 1, isPlaying = false, inputLocked = true;
+
+  function flashBtn(idx, dur = 400) {
+    return new Promise(r => {
+      buttons[idx].classList.add('active');
+      playTone(idx, dur);
+      setTimeout(() => { buttons[idx].classList.remove('active'); setTimeout(r, 100); }, dur);
+    });
+  }
+
+  async function playSequence() {
+    inputLocked = true;
+    statusEl.textContent = LANG === 'vi' ? 'Nghe...' : 'Listen...';
+    await new Promise(r => setTimeout(r, 600));
+    for (const idx of sequence) {
+      await flashBtn(idx, Math.max(200, 500 - level * 20));
+    }
+    inputLocked = false;
+    statusEl.textContent = LANG === 'vi' ? 'Nhấn lại!' : 'Repeat!';
+  }
+
+  function nextRound() {
+    level = sequence.length + 1;
+    hud.setLevel(level);
+    score += level * 15;
+    hud.setScore(score);
+    sequence.push(Math.floor(Math.random() * 3));
+    playSequence();
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; sequence = []; playerIdx = 0; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    nextRound();
+  }
+
+  function endGame() {
+    isPlaying = false; inputLocked = true;
+    statusEl.textContent = LANG === 'vi' ? 'Kết thúc!' : 'Game Over!';
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  buttons.forEach((btn, i) => {
+    btn.addEventListener('click', async () => {
+      if (!isPlaying || inputLocked) return;
+      await flashBtn(i, 200);
+      if (i !== sequence[playerIdx]) { endGame(); return; }
+      playerIdx++;
+      if (playerIdx >= sequence.length) {
+        inputLocked = true; playerIdx = 0;
+        statusEl.textContent = LANG === 'vi' ? 'Tuyệt!' : 'Great!';
+        setTimeout(nextRound, 800);
+      }
+    });
+  });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

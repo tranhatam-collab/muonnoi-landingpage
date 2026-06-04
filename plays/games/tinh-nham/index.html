@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Giải phép tính nhanh nhất có thể.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinh Nham — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #math-area { text-align: center; margin: 1rem auto; max-width: 360px; }
+  #math-problem { font-size: 2.5rem; font-weight: 700; color: #f59e0b; margin: 1rem 0; }
+  #math-input { width: 100%; padding: 0.8rem; font-size: 1.5rem; text-align: center; border-radius: 8px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; }
+  #math-timer { font-size: 1.2rem; color: #9ca3af; margin-top: 0.5rem; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="tinh-nham">
+
+<div id="hud-root"></div>
+<div id="math-area">
+  <div id="math-problem">1 + 1 = ?</div>
+  <input type="tel" id="math-input" placeholder="?" autocomplete="off" aria-label="Answer">
+  <div id="math-timer">15s</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tinh Nham</h1>
+    <p>Giai phep tinh nhanh nhất có thể. Sai hoặc hết giờ là thua!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'tinh-nham';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tính Nhẩm', desc: 'Phép tính sẽ xuất hiện. Gõ đáp án vào ô trống. Càng nhanh càng nhiều điểm.' },
+      { title: 'Khó hơn', desc: 'Càng về sau phép tính càng khó (nhân, chia, nhiều số). Thời gian mỗi câu càng ít.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn số câu. Giải càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Mental Math', desc: 'Math problems appear. Type the answer. Faster = more points.' },
+      { title: 'Harder', desc: 'Later problems include multiplication, division, multiple numbers. Less time per question.' },
+      { title: 'Endless', desc: 'No question limit. Solve as many as you can!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const problemEl = document.getElementById('math-problem');
+  const inputEl = document.getElementById('math-input');
+  const timerEl = document.getElementById('math-timer');
+
+  let score = 0, level = 1, timeLeft = 15, isPlaying = false, timerInterval = null, answer = 0;
+
+  function genProblem() {
+    const ops = level < 3 ? ['+', '-'] : level < 6 ? ['+', '-', '*'] : ['+', '-', '*', '/'];
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    let a, b;
+    if (op === '*') { a = 2 + Math.floor(Math.random() * 9); b = 2 + Math.floor(Math.random() * 9); }
+    else if (op === '/') { b = 2 + Math.floor(Math.random() * 9); a = b * (1 + Math.floor(Math.random() * 10)); }
+    else { a = 1 + Math.floor(Math.random() * (10 + level * 3)); b = 1 + Math.floor(Math.random() * (10 + level * 3)); }
+    if (op === '-' && a < b) [a, b] = [b, a];
+    problemEl.textContent = `${a} ${op} ${b} = ?`;
+    answer = op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : Math.floor(a / b);
+    timeLeft = Math.max(5, 18 - level);
+    inputEl.value = ''; inputEl.focus();
+  }
+
+  function onInput() {
+    if (!isPlaying) return;
+    const val = parseInt(inputEl.value, 10);
+    if (val === answer) {
+      score += timeLeft * 5 + level * 10;
+      hud.setScore(score);
+      if (score % 100 === 0) { level++; hud.setLevel(level); }
+      genProblem();
+    }
+  }
+
+  function tick() {
+    timeLeft--; timerEl.textContent = timeLeft + 's';
+    if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); genProblem();
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  inputEl.addEventListener('input', onInput);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

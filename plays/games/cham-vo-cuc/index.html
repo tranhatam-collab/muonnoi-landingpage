@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Phản xạ: chạm vòng sáng trước khi tắt. Tốc độ tăng vô hạn."/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Chạm Vô Cực · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+</head>
+<body>
+  <div class="game-shell">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Chạm Vô Cực</b></div>
+    </div>
+
+    <div class="hud">
+      <div class="stat"><div class="k">Level</div><div class="v" id="hLevel">1</div></div>
+      <div class="stat"><div class="k">Điểm</div><div class="v" id="hScore">0</div></div>
+      <div class="stat"><div class="k">Combo</div><div class="v" id="hCombo">0</div></div>
+      <div class="stat"><div class="k">Tim</div><div class="v" id="hLives">♥♥♥</div></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="cv" width="360" height="420"></canvas>
+      <div class="overlay" id="overlay">
+        <h2 id="ovTitle">Chạm Vô Cực</h2>
+        <p class="small" id="ovText">
+          Chạm vào vòng sáng <b>trước khi nó tắt</b>. Mỗi level tốc độ nhanh hơn.
+          Trò chơi <b>không có màn cuối</b> — hãy phá kỷ lục của chính bạn.
+        </p>
+        <div class="note" id="ovBest"></div>
+        <button class="btn" id="startBtn">Bắt đầu</button>
+        <div class="small" id="ovAuth"></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button class="btn secondary full" id="howBtn">Cách chơi</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+  const GAME_ID = 'cham-vo-cuc';
+  const FREE = 5; // lượt chơi miễn phí trước khi cần đăng ký
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const $ = id => document.getElementById(id);
+
+  let best = { level: 0, score: 0 };
+  let game = null, raf = 0;
+
+  // ----- helpers -----
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1200); }
+  function hearts(n){ return '♥'.repeat(Math.max(0,n)) + '♡'.repeat(Math.max(0,3-n)); }
+
+  function cellRect(grid, idx){
+    const cols = grid, rows = grid;
+    const pad = 14, gap = 10;
+    const cw = (W - pad*2 - gap*(cols-1)) / cols;
+    const ch = (H - pad*2 - gap*(rows-1)) / rows;
+    const c = idx % cols, r = Math.floor(idx / cols);
+    return { x: pad + c*(cw+gap), y: pad + r*(ch+gap), w: cw, h: ch };
+  }
+
+  function newGame(){
+    return {
+      running:true, level:1, score:0, combo:0, lives:3,
+      hits:0, grid:3, targets:[], spawnTimer:0, spawnEvery:1100,
+      life:1500, concurrent:1, t:0, last:performance.now(),
+    };
+  }
+  function levelParams(lvl){
+    const grid = Math.min(3 + Math.floor((lvl-1)/4), 6);            // 3x3 -> 6x6
+    const life = Math.max(420, 1500 * Math.pow(0.94, lvl-1));        // thời gian sống của ô (ms)
+    const spawnEvery = Math.max(360, 1100 * Math.pow(0.95, lvl-1));  // nhịp xuất hiện
+    const concurrent = Math.min(1 + Math.floor((lvl-1)/6), 4);       // số ô cùng lúc
+    return { grid, life, spawnEvery, concurrent };
+  }
+
+  function spawn(){
+    const g = game;
+    const occupied = new Set(g.targets.map(t=>t.idx));
+    const total = g.grid*g.grid;
+    if (occupied.size >= total) return;
+    let idx; do { idx = (Math.random()*total)|0; } while(occupied.has(idx));
+    g.targets.push({ idx, age:0, life:g.life, hit:false });
+  }
+
+  function loop(now){
+    const g = game; if(!g || !g.running) return;
+    const dt = Math.min(50, now - g.last); g.last = now; g.t += dt;
+
+    // spawn
+    g.spawnTimer += dt;
+    if (g.spawnTimer >= g.spawnEvery && g.targets.length < g.concurrent){
+      g.spawnTimer = 0; spawn();
+    }
+    // age targets, miss = mất tim
+    for (const tt of g.targets){
+      tt.age += dt;
+      if (tt.age >= tt.life && !tt.hit){ tt.dead = true; g.lives--; g.combo = 0; flash('#ff453a'); }
+    }
+    g.targets = g.targets.filter(t => !t.dead && !(t.hit && t.age - t.hitAt > 160));
+
+    if (g.lives <= 0){ return gameOver(); }
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  let flashColor = null, flashAt = 0;
+  function flash(c){ flashColor = c; flashAt = performance.now(); }
+
+  function draw(){
+    const g = game;
+    ctx.clearRect(0,0,W,H);
+    // grid hint
+    const total = g.grid*g.grid;
+    for (let i=0;i<total;i++){
+      const r = cellRect(g.grid, i);
+      ctx.fillStyle = 'rgba(255,255,255,.025)';
+      roundRect(r.x,r.y,r.w,r.h,10); ctx.fill();
+    }
+    // targets
+    for (const tt of g.targets){
+      const r = cellRect(g.grid, tt.idx);
+      const cx = r.x + r.w/2, cy = r.y + r.h/2;
+      const rad = Math.min(r.w,r.h)/2 - 4;
+      const rem = Math.max(0, 1 - tt.age/tt.life);
+      if (tt.hit){
+        const k = Math.min(1,(tt.age - tt.hitAt)/160);
+        ctx.globalAlpha = 1-k;
+        ctx.fillStyle = '#30d158';
+        circle(cx,cy,rad*(1+k*0.5)); ctx.fill();
+        ctx.globalAlpha = 1; continue;
+      }
+      // glow
+      const grad = ctx.createRadialGradient(cx,cy,rad*0.2,cx,cy,rad);
+      grad.addColorStop(0,'#a98bff'); grad.addColorStop(1,'#7c5cff');
+      ctx.fillStyle = grad; circle(cx,cy,rad*(0.7+0.3*rem)); ctx.fill();
+      // shrinking ring = time left
+      ctx.strokeStyle = rem>0.4?'#22d3ee':'#ffd60a'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx,cy,rad-1,-Math.PI/2, -Math.PI/2 + Math.PI*2*rem); ctx.stroke();
+    }
+    // flash overlay
+    if (flashColor){
+      const k = Math.max(0, 1 - (performance.now()-flashAt)/220);
+      if (k>0){ ctx.fillStyle = flashColor; ctx.globalAlpha = k*0.25; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
+      else flashColor = null;
+    }
+  }
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function circle(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.closePath(); }
+
+  function hud(){
+    $('hLevel').textContent = game.level;
+    $('hScore').textContent = game.score;
+    $('hCombo').textContent = game.combo;
+    $('hLives').textContent = hearts(game.lives);
+  }
+
+  function onTap(px,py){
+    const g = game; if(!g||!g.running) return;
+    // tìm target trúng
+    let hitT = null;
+    for (const tt of g.targets){
+      if (tt.hit) continue;
+      const r = cellRect(g.grid, tt.idx);
+      const cx=r.x+r.w/2, cy=r.y+r.h/2, rad=Math.min(r.w,r.h)/2;
+      if ((px-cx)**2 + (py-cy)**2 <= rad*rad){ hitT = tt; break; }
+    }
+    if (hitT){
+      hitT.hit = true; hitT.hitAt = hitT.age;
+      g.combo++; g.hits++;
+      const gain = 10 + g.combo*2 + (g.level-1)*2;
+      g.score += gain;
+      // level up mỗi 10 hit
+      if (g.hits % 10 === 0){
+        g.level++;
+        const p = levelParams(g.level);
+        g.grid=p.grid; g.life=p.life; g.spawnEvery=p.spawnEvery; g.concurrent=p.concurrent;
+        flash('#22d3ee'); toast('Level ' + g.level + '! Nhanh hơn nào ⚡');
+      }
+      hud();
+    } else {
+      g.combo = 0; hud(); // chạm hụt = mất combo
+    }
+  }
+
+  // pointer mapping
+  function evtPos(e){
+    const rect = cv.getBoundingClientRect();
+    const cx = (e.touches?e.touches[0].clientX:e.clientX) - rect.left;
+    const cy = (e.touches?e.touches[0].clientY:e.clientY) - rect.top;
+    return { x: cx * (W/rect.width), y: cy * (H/rect.height) };
+  }
+  cv.addEventListener('pointerdown', e=>{ e.preventDefault(); const p=evtPos(e); onTap(p.x,p.y); }, {passive:false});
+
+  async function start(){
+    const gate = await MNPlays.beginPlay(GAME_ID, FREE);
+    if (!gate.allowed) return; // SDK đã hiện modal đồng ý / đăng ký
+    cancelAnimationFrame(raf);
+    game = newGame(); hud();
+    $('overlay').classList.add('hidden');
+    await MNPlays.saveProgress(GAME_ID, { status:'playing', level:1, score:0 });
+    game.last = performance.now();
+    raf = requestAnimationFrame(loop);
+  }
+
+  async function gameOver(){
+    game.running = false; cancelAnimationFrame(raf);
+    const newBestLvl = Math.max(best.level, game.level);
+    const newBestScore = Math.max(best.score, game.score);
+    const isPB = game.score > best.score;
+    best = { level:newBestLvl, score:newBestScore };
+    await MNPlays.saveProgress(GAME_ID, { status:'played', level:newBestLvl, score:newBestScore });
+    const pts = Math.floor(game.score/10) + game.level*2;
+    const res = await MNPlays.awardPoints(GAME_ID, pts, 'cham-vo-cuc');
+    $('ovTitle').textContent = isPB ? 'Kỷ lục mới! 🎉' : 'Hết tim';
+    $('ovText').innerHTML = `Bạn đạt <b>Level ${game.level}</b> · <b>${game.score} điểm</b>.<br/>`
+      + (res ? `Nhận <b>+${pts} Muôn Điểm</b>${res.guest?' (tạm — đăng nhập để giữ lại)':''}.` : '')
+      + `<br/><span class="small">Không ai "phá đảo" được trò này. Lần sau xa hơn nhé.</span>`;
+    $('ovBest').textContent = `Kỷ lục: Level ${best.level} · ${best.score} điểm`;
+    $('startBtn').textContent = 'Chơi lại';
+    $('overlay').classList.remove('hidden');
+    refreshAuthLine();
+  }
+
+  // ----- boot -----
+  $('startBtn').onclick = start;
+  $('howBtn').onclick = ()=> toast('Chạm vòng sáng trước khi tắt. Combo càng cao điểm càng nhiều.');
+
+  function refreshAuthLine(){
+    $('ovAuth').innerHTML = MNPlays.isLoggedIn()
+      ? '✓ Tiến trình & điểm được lưu vào tài khoản.'
+      : '<a href="'+MNPlays.loginUrl()+'" style="color:var(--brand2)">Đăng nhập</a> để lưu tiến trình & nhận Muôn Điểm.';
+  }
+
+  (async ()=>{
+    await MNPlays.init();
+    const p = await MNPlays.loadProgress(GAME_ID);
+    if (p){ best = { level:p.level||0, score:p.score||0 }; }
+    if (best.score) $('ovBest').textContent = `Kỷ lục: Level ${best.level} · ${best.score} điểm`;
+    refreshAuthLine();
+    // vẽ nền tĩnh
+    game = newGame(); draw();
+  })();
+  </script>
+</body>
+</html>

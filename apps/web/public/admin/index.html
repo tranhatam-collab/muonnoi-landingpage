@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0f14" />
+  <meta name="robots" content="index,follow" />
+  <title>Quản Trị &amp; Governance | Muôn Nơi</title>
+  <meta name="description" content="Cấu trúc quản trị của Muôn Nơi — admin có vai trò gì, review loop hoạt động thế nào, xử lý verify và complaints ra sao." />
+  <link rel="canonical" href="https://www.muonnoi.org/admin/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Quản Trị &amp; Governance | Muôn Nơi" />
+  <meta property="og:description" content="Quản trị có cấu trúc. Review loop rõ ràng. Không black-box." />
+  <meta property="og:url" content="https://www.muonnoi.org/admin/" />
+  <meta property="og:image" content="https://www.muonnoi.org/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/assets/ui.css?v=20260327" />
+</head>
+<body class="mn-body">
+  <a class="mn-srOnlyFocus" href="#main">Đi tới nội dung</a>
+
+  <div class="mn-bg" aria-hidden="true">
+    <div class="mn-bg__grid"></div>
+    <div class="mn-bg__glow mn-bg__glow--1"></div>
+    <div class="mn-bg__glow mn-bg__glow--2"></div>
+    <div class="mn-bg__noise"></div>
+  </div>
+
+  <header class="mn-topbar" role="banner">
+    <div class="mn-shell mn-topbar__inner">
+      <a class="mn-brand" href="/">
+        <span class="mn-brand__mark">MN</span>
+        <span class="mn-brand__text">
+          <span class="mn-brand__name">Muôn Nơi</span>
+          <span class="mn-brand__sub">Hạ tầng số cho đời sống thật</span>
+        </span>
+      </a>
+      <nav class="mn-mainNav" aria-label="Điều hướng chính">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+      </nav>
+      <div class="mn-topbar__actions">
+        <button class="mn-iconBtn" type="button" id="btnTheme" aria-label="Đổi giao diện"><span id="themeIcon">◐</span></button>
+        <button class="mn-langBtn" type="button" id="btnLang" aria-label="Đổi ngôn ngữ"><span id="langLabel">Tiếng Việt</span></button>
+        <a class="mn-btn mn-btn--primary" href="/feed/">Mở hệ</a>
+        <button class="mn-burger" id="mnBurger" type="button" aria-label="Mở menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mn-mobileMenu" id="mnMobileMenu" hidden>
+      <div class="mn-mobileMenu__links">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a href="/feed/" data-route="/feed/">Mở hệ</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="mn-page">
+    <div class="mn-shell">
+
+      <!-- HERO -->
+      <section class="mn-homeHero">
+        <div class="mn-homeHero__content">
+          <div class="mn-kicker">GOVERNANCE · Admin · Trust Layer</div>
+          <h1 class="mn-h1">
+            Quản Trị<br />
+            Có Cấu Trúc,<br />
+            Không Black-Box.
+          </h1>
+          <p class="mn-homeHero__desc">
+            Trang này không phải admin panel. Đây là giải thích công khai về cách
+            hệ thống quản trị Muôn Nơi hoạt động — ai có quyền gì, review loop
+            thế nào và xử lý complaints ra sao. Minh bạch là điều kiện để tin tưởng.
+          </p>
+          <div class="mn-homeHero__actions">
+            <a class="mn-btn mn-btn--primary" href="/complaints/">Gửi khiếu nại</a>
+            <a class="mn-btn mn-btn--ghost" href="/security/">Xem bảo mật</a>
+            <a class="mn-btn mn-btn--ghost" href="/verify/">Xem xác minh</a>
+          </div>
+          <div class="mn-homeHero__metaGrid">
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Nguyên tắc quản trị</div>
+              <div class="mn-statCard__value">
+                Không một người nào có quyền vô hạn. Mọi quyết định quan trọng
+                phải có review loop và có thể khiếu nại.
+              </div>
+            </article>
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Trạng thái hiện tại</div>
+              <div class="mn-statCard__value">
+                Phase 2 — governance layer sẽ mở sau khi Social Core ổn định.
+                Hiện tại admin team xử lý trực tiếp qua internal review.
+              </div>
+            </article>
+          </div>
+        </div>
+        <aside class="mn-homeHero__preview">
+          <div class="mn-previewWindow">
+            <div class="mn-previewWindow__top">
+              <div class="mn-previewWindow__dots"><span></span><span></span><span></span></div>
+              <div class="mn-previewWindow__title">Governance Flow</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">C</span>
+                <div>
+                  <div class="mn-previewPost__name">Complaints nhận</div>
+                  <div class="mn-previewPost__time">Bước 1</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Khiếu nại được ghi nhận, nhận mã theo dõi.</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">R</span>
+                <div>
+                  <div class="mn-previewPost__name">Review Layer</div>
+                  <div class="mn-previewPost__time">Bước 2</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Admin review theo policy rõ ràng, không tùy tiện.</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">A</span>
+                <div>
+                  <div class="mn-previewPost__name">Action &amp; Feedback</div>
+                  <div class="mn-previewPost__time">Bước 3</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Quyết định được thông báo. Trường hợp nặng lên Verify layer.</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- ROLES -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Cấu trúc vai trò</h2>
+          <p class="mn-sectionDesc">Quyền hạn rõ ràng, có giới hạn, có thể kiểm tra.</p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Thành viên</div>
+            <div class="mn-infoCard__title">User — Nền tảng</div>
+            <div class="mn-infoCard__text">Đăng bài, bình luận, vote, follow, gửi complaints. Không có quyền xóa nội dung người khác hay can thiệp vào hệ thống.</div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Moderator</div>
+            <div class="mn-infoCard__title">Mod — Hỗ trợ review</div>
+            <div class="mn-infoCard__text">Review complaints cấp thấp, ẩn nội dung vi phạm rõ ràng. Không có quyền ban account. Log mọi action.</div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Admin</div>
+            <div class="mn-infoCard__title">Admin — Governance</div>
+            <div class="mn-infoCard__text">Xử lý cases nặng, verify nâng cao, quyết định policy. Không có quyền đọc private data. Mọi action đều có audit log.</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- REVIEW LOOP -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Review loop hoạt động thế nào?</h2>
+          <p class="mn-sectionDesc">Không tùy tiện. Không black-box. Quy trình rõ từ nhận đến xử lý.</p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--4">
+          <article class="mn-miniCard"><h3>Nhận complaints</h3><p>Mọi complaints đều nhận mã theo dõi. Không spam filter ẩn. Không bỏ qua không có lý do.</p></article>
+          <article class="mn-miniCard"><h3>Phân loại</h3><p>Tự động phân loại theo severity. AI assist flag sơ bộ. Con người review quyết định cuối.</p></article>
+          <article class="mn-miniCard"><h3>Xử lý</h3><p>Theo policy công khai. Không tùy tiện. Kết quả được thông báo cho người khiếu nại.</p></article>
+          <article class="mn-miniCard"><h3>Kháng nghị</h3><p>Quyết định có thể kháng nghị. Trường hợp nặng lên cấp admin cao hơn theo hierarchy rõ.</p></article>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="mn-homeCTA">
+        <div class="mn-homeCTA__inner">
+          <div>
+            <div class="mn-statCard__label">Có vấn đề cần báo cáo?</div>
+            <div style="margin-top:8px;font-size:20px;font-weight:700;">Gửi khiếu nại — minh bạch, có theo dõi, có phản hồi.</div>
+            <div style="margin-top:6px;color:var(--muted);font-size:15px;">Không có black-box. Mọi complaints đều được xử lý theo quy trình.</div>
+          </div>
+          <div class="mn-homeCTA__actions">
+            <a class="mn-btn mn-btn--primary" href="/complaints/">Gửi khiếu nại</a>
+            <a class="mn-btn mn-btn--ghost" href="/security/">Xem bảo mật</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="mn-footer">
+    <div class="mn-shell mn-footer__inner">
+      <div class="mn-footer__brand">
+        <span class="mn-brand__mark mn-brand__mark--sm">MN</span>
+        <div>
+          <div class="mn-footer__name">Muôn Nơi</div>
+          <div class="mn-footer__tag">Social-first · privacy-first · module-first</div>
+        </div>
+      </div>
+      <div class="mn-footer__right">
+        <a class="mn-footer__link" href="/">Trang chủ</a>
+        <a class="mn-footer__link" href="/ecosystem/">Hệ sinh thái</a>
+        <a class="mn-footer__link" href="/security/">Bảo mật</a>
+        <a class="mn-footer__link" href="/guide/">Hướng dẫn</a>
+        <a class="mn-footer__link" href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a class="mn-footer__link" href="/investment/" data-route="/investment/">Đầu tư</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/ui.js?v=20260327" defer></script>
+</body>
+</html>

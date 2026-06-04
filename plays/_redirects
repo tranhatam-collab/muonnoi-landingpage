@@ -1,0 +1,6 @@
+/games/* /games/:splat 200
+/styles/* /styles/:splat 200
+/assets/* /assets/:splat 200
+/images/* /images/:splat 200
+/plays-sdk.js /plays-sdk.js 200
+/catalog.js /catalog.js 200

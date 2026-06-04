@@ -1,0 +1,36 @@
+# Wix legacy URL → new structure (applied on www.nguoivietmuonnoi.com after Phase 5)
+/cuoc-song-muon-noi   /journeys/   301
+/hanh-trinh           /journeys/   301
+/csmn                 /journeys/   301
+/tham-gia             /start/      301
+/groups               /members/    301
+/plans-pricing        /start/      301
+/file-share           /resources/  301
+/blog                 /stories/    301
+/event-list           /journeys/   301
+/book-online          /start/      301
+/donation-thank-you-page   /        302
+/post/*               /stories/    301
+
+# Clean URL aliases
+/about                /manifesto/  301
+/journey              /journeys/   301
+/dalat                /journeys/dalat/   301
+
+# Legal page aliases
+/policy               /privacy/    301
+/privacy-policy       /privacy/    301
+/bao-mat              /privacy/    301
+/tos                  /terms/      301
+/terms-of-use         /terms/      301
+/dieu-khoan           /terms/      301
+/refund-policy        /refund/     301
+/hoan-phi             /refund/     301
+/guidelines           /community-guidelines/  301
+/code-of-conduct      /community-guidelines/  301
+/nguyen-tac           /community-guidelines/  301
+
+# Force www to apex (Cloudflare Pages handles HTTPS)
+https://www.nguoiviet.muonnoi.org/*  https://nguoiviet.muonnoi.org/:splat  301
+
+# SPA fallback NOT used — we serve real index.html per route directory

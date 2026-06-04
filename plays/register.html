@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Đăng ký thành viên · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="assets/plays.css">
+  <style>
+    .form{max-width:460px;margin:0 auto}
+    .field{margin:12px 0}
+    label.k{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+    .seg{display:flex;gap:8px;flex-wrap:wrap}
+    .seg .pill{cursor:pointer}
+    .seg .pill.sel{border-color:var(--brand);color:var(--text)}
+    .err{color:var(--bad);font-size:12px;margin-top:4px;min-height:14px}
+    .ok-box{display:none;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:560px">
+    <div class="topbar">
+      <div class="brand"><div class="mark"></div><div><h1>Đăng ký thành viên</h1>
+        <div class="small">Miễn phí · chơi không giới hạn · lưu lịch sử &amp; Muôn Điểm</div></div></div>
+      <div class="nav"><a class="pill" href="index.html">‹ Trang chủ</a></div>
+    </div>
+
+    <div class="card form" id="formCard" style="margin-top:18px">
+      <p class="small">Bạn đã dùng hết lượt chơi miễn phí. Tạo tài khoản để tiếp tục. Đã có tài khoản?
+        <a id="loginLink" href="#" style="color:var(--brand2)">Đăng nhập</a>.</p>
+
+      <div class="field">
+        <label class="k">Biệt danh *</label>
+        <input id="nickname" maxlength="40" placeholder="vd: SaoBang2026" />
+      </div>
+
+      <div class="field">
+        <label class="k">Độ tuổi *</label>
+        <input id="age" type="number" min="3" max="120" inputmode="numeric" placeholder="vd: 12" />
+        <div class="mn-warn" id="minorWarn" style="display:none">
+          Bạn dưới tuổi quy định — cần <b>sự đồng ý của cha mẹ/người giám hộ</b> để đăng ký.
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="k">Giới tính</label>
+        <div class="seg" id="gender">
+          <span class="pill" data-v="nam">Nam</span>
+          <span class="pill" data-v="nu">Nữ</span>
+          <span class="pill" data-v="khac">Khác</span>
+          <span class="pill sel" data-v="khong">Không nêu</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="k">Email *</label>
+        <input id="email" type="email" inputmode="email" placeholder="ban@example.com" />
+      </div>
+
+      <div class="field">
+        <label class="k">Số điện thoại *</label>
+        <input id="phone" type="tel" inputmode="tel" placeholder="vd: 09xxxxxxxx" />
+      </div>
+
+      <label class="agree" style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;margin:8px 0">
+        <input type="checkbox" id="agreeTerms" style="width:auto;margin-top:2px"/>
+        <span>Tôi đồng ý <a href="terms.html" target="_blank">Điều khoản &amp; Miễn trừ trách nhiệm</a> và
+        <a href="privacy.html" target="_blank">Quyền riêng tư</a>.</span>
+      </label>
+      <label class="agree" id="parentRow" style="display:none;gap:8px;align-items:flex-start;font-size:12.5px;margin:8px 0">
+        <input type="checkbox" id="agreeParent" style="width:auto;margin-top:2px"/>
+        <span>Tôi là cha mẹ/người giám hộ (hoặc đã được cho phép) và đồng ý cho người dưới tuổi quy định sử dụng.</span>
+      </label>
+
+      <div class="err" id="err"></div>
+      <button class="btn full" id="submitBtn">Tạo tài khoản</button>
+      <p class="small" style="margin-top:10px">Chúng tôi sẽ gửi <b>liên kết đăng nhập</b> tới email của bạn để xác nhận.</p>
+    </div>
+
+    <div class="card form ok-box" id="okCard" style="margin-top:18px">
+      <h2 style="margin-top:0">Gần xong! 🎉</h2>
+      <p class="small">Thông tin của bạn đã được ghi nhận. Vui lòng kiểm tra <b>email</b> và bấm liên kết đăng nhập
+      để kích hoạt tài khoản, sau đó quay lại chơi không giới hạn.</p>
+      <a class="btn full" id="goLogin" href="#" style="text-align:center;text-decoration:none">Tới trang đăng nhập</a>
+      <div style="height:8px"></div>
+      <a class="btn secondary full" href="index.html" style="text-align:center;text-decoration:none">Về trang chủ</a>
+    </div>
+  </div>
+
+  <script src="assets/plays-sdk.js"></script>
+  <script>
+    const $=id=>document.getElementById(id);
+    let gender='khong';
+
+    // login link
+    (async()=>{ await MNPlays.init(); const u=MNPlays.loginUrl(); $('loginLink').href=u; $('goLogin').href=u; })();
+
+    // gender chọn
+    $('gender').querySelectorAll('.pill').forEach(p=>p.onclick=()=>{
+      gender=p.dataset.v; $('gender').querySelectorAll('.pill').forEach(x=>x.classList.toggle('sel',x===p));
+    });
+
+    // cảnh báo vị thành niên
+    $('age').oninput=()=>{
+      const a=parseInt($('age').value,10);
+      const minor = a && a<16;
+      $('minorWarn').style.display = minor?'block':'none';
+      $('parentRow').style.display = minor?'flex':'none';
+    };
+
+    function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+    function validPhone(p){ return /^[0-9+\-\s().]{8,20}$/.test(p); }
+
+    $('submitBtn').onclick=async()=>{
+      const nickname=$('nickname').value.trim();
+      const age=parseInt($('age').value,10);
+      const email=$('email').value.trim();
+      const phone=$('phone').value.trim();
+      const err=$('err'); err.textContent='';
+
+      if(nickname.length<2) return err.textContent='Vui lòng nhập biệt danh (≥2 ký tự).';
+      if(!age||age<3||age>120) return err.textContent='Vui lòng nhập độ tuổi hợp lệ.';
+      if(!validEmail(email)) return err.textContent='Email không hợp lệ.';
+      if(!validPhone(phone)) return err.textContent='Số điện thoại không hợp lệ.';
+      if(!$('agreeTerms').checked) return err.textContent='Bạn cần đồng ý Điều khoản và Quyền riêng tư.';
+      if(age<16 && !$('agreeParent').checked) return err.textContent='Cần xác nhận đồng ý của cha mẹ/người giám hộ.';
+
+      $('submitBtn').disabled=true; $('submitBtn').textContent='Đang gửi…';
+      const payload={ nickname, age, gender, email, phone,
+        consent_version: MNPlays.TERMS_VERSION, parental: age<16 };
+      try{
+        await fetch('/functions/api/plays/register',{ method:'POST',
+          headers:{'content-type':'application/json'}, body:JSON.stringify(payload) });
+      }catch(_){ /* fail-open: vẫn cho qua bước email */ }
+      // chuyển sang màn xác nhận email (đăng nhập phép màu)
+      $('formCard').style.display='none';
+      $('okCard').style.display='block';
+    };
+  </script>
+</body>
+</html>

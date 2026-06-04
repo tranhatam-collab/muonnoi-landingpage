@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0f14" />
+  <meta name="robots" content="index,follow" />
+  <title>Trạng Thái Hệ Thống | Muôn Nơi</title>
+  <meta name="description" content="Trạng thái triển khai hệ thống Muôn Nơi — những gì đã hoạt động, đang chuẩn bị và sắp mở." />
+  <link rel="canonical" href="https://www.muonnoi.org/status/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Trạng Thái Hệ Thống | Muôn Nơi" />
+  <meta property="og:description" content="Minh bạch tiến trình. Công bố tình trạng từng phần của hệ." />
+  <meta property="og:url" content="https://www.muonnoi.org/status/" />
+  <meta property="og:image" content="https://www.muonnoi.org/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/assets/ui.css?v=20260327" />
+</head>
+<body class="mn-body">
+  <a class="mn-srOnlyFocus" href="#main">Đi tới nội dung</a>
+
+  <div class="mn-bg" aria-hidden="true">
+    <div class="mn-bg__grid"></div>
+    <div class="mn-bg__glow mn-bg__glow--1"></div>
+    <div class="mn-bg__glow mn-bg__glow--2"></div>
+    <div class="mn-bg__noise"></div>
+  </div>
+
+  <header class="mn-topbar" role="banner">
+    <div class="mn-shell mn-topbar__inner">
+      <a class="mn-brand" href="/">
+        <span class="mn-brand__mark">MN</span>
+        <span class="mn-brand__text">
+          <span class="mn-brand__name">Muôn Nơi</span>
+          <span class="mn-brand__sub">Hạ tầng số cho đời sống thật</span>
+        </span>
+      </a>
+      <nav class="mn-mainNav" aria-label="Điều hướng chính">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+      </nav>
+      <div class="mn-topbar__actions">
+        <button class="mn-iconBtn" type="button" id="btnTheme" aria-label="Đổi giao diện"><span id="themeIcon">◐</span></button>
+        <button class="mn-langBtn" type="button" id="btnLang" aria-label="Đổi ngôn ngữ"><span id="langLabel">Tiếng Việt</span></button>
+        <a class="mn-btn mn-btn--primary" href="/feed/">Mở hệ</a>
+        <button class="mn-burger" id="mnBurger" type="button" aria-label="Mở menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mn-mobileMenu" id="mnMobileMenu" hidden>
+      <div class="mn-mobileMenu__links">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a href="/feed/" data-route="/feed/">Mở hệ</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="mn-page">
+    <div class="mn-shell">
+
+      <!-- HERO -->
+      <section class="mn-homeHero">
+        <div class="mn-homeHero__content">
+          <div class="mn-kicker">STATUS · Minh bạch · Cập nhật theo pha</div>
+          <h1 class="mn-h1">
+            Hệ Đang Sống.<br />
+            Không Phải<br />
+            Hứa Hẹn.
+          </h1>
+          <p class="mn-homeHero__desc">
+            Trang này công bố tình trạng thật của từng phần trong hệ thống Muôn Nơi —
+            những gì đã hoạt động, đang chuẩn bị và sắp mở. Không PR. Không hứa hẹn
+            không có căn cứ.
+          </p>
+          <div class="mn-homeHero__actions">
+            <a class="mn-btn mn-btn--primary" href="/feed/">Vào Social Core</a>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem lộ trình</a>
+          </div>
+          <div class="mn-homeHero__metaGrid">
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Cập nhật lần cuối</div>
+              <div class="mn-statCard__value">Tháng 3, 2026 — đang chuẩn hóa public shell và Social Core API.</div>
+            </article>
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Giai đoạn hiện tại</div>
+              <div class="mn-statCard__value">Phase 1 — Ổn định Social Core. Route thật. Headers chuẩn. Auth hoạt động.</div>
+            </article>
+          </div>
+        </div>
+        <aside class="mn-homeHero__preview">
+          <div class="mn-previewWindow">
+            <div class="mn-previewWindow__top">
+              <div class="mn-previewWindow__dots"><span></span><span></span><span></span></div>
+              <div class="mn-previewWindow__title">System Status — Live</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs" style="background:rgba(100,220,100,.15);color:#6dc86d;">✓</span>
+                <div>
+                  <div class="mn-previewPost__name">Public Web Shell</div>
+                  <div class="mn-previewPost__time">muonnoi.org — Hoạt động</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">10 route public đã có page thật. Không route trắng.</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs" style="background:rgba(100,220,100,.15);color:#6dc86d;">✓</span>
+                <div>
+                  <div class="mn-previewPost__name">Auth Layer</div>
+                  <div class="mn-previewPost__time">app.muonnoi.org — Hoạt động</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Email OTP, session HttpOnly, CORS chuẩn.</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs" style="background:rgba(255,200,50,.12);color:#e0b84a;">⚙</span>
+                <div>
+                  <div class="mn-previewPost__name">Social Core Feed</div>
+                  <div class="mn-previewPost__time">Đang chuẩn bị</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">API hoàn thiện. DB schema xong. Đang test và ổn định.</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs" style="background:rgba(150,150,150,.10);color:var(--muted);">—</span>
+                <div>
+                  <div class="mn-previewPost__name">Verify / Complaints</div>
+                  <div class="mn-previewPost__time">Phase 2 — chưa mở</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Sẽ mở sau khi Social Core đủ ổn định.</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- STATUS TABLE -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Trạng thái từng phần</h2>
+          <p class="mn-sectionDesc">Cập nhật theo từng phase triển khai thực tế.</p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker" style="color:#6dc86d;">● Hoạt động</div>
+            <div class="mn-infoCard__title">muonnoi.org — Public Shell</div>
+            <div class="mn-infoCard__text">
+              10 route có page thật. UI system đồng nhất. Dark/light mode. Mobile menu.
+              Security headers đầy đủ. Sitemap và robots.txt chuẩn.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker" style="color:#6dc86d;">● Hoạt động</div>
+            <div class="mn-infoCard__title">Auth — Email OTP</div>
+            <div class="mn-infoCard__text">
+              Đăng nhập email OTP. Session cookie HttpOnly. CORS allowlist.
+              Rate-limit cơ bản. D1 database. Cloudflare Worker.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker" style="color:#e0b84a;">⚙ Đang chuẩn bị</div>
+            <div class="mn-infoCard__title">Social Core — Feed &amp; Posts</div>
+            <div class="mn-infoCard__text">
+              API hoàn thiện. Schema DB xong. Tính năng: posts, comments, votes,
+              topics, rooms, follows, notifications. Đang test ổn định trước khi mở.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker" style="color:#e0b84a;">⚙ Đang chuẩn bị</div>
+            <div class="mn-infoCard__title">AI Integration</div>
+            <div class="mn-infoCard__text">
+              AI moderation, AI summarize, AI verify — đã thiết kế xong. Đang
+              kiểm tra flow fire-and-forget với ctx.waitUntil().
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">○ Phase 2</div>
+            <div class="mn-infoCard__title">Verify &amp; Complaints</div>
+            <div class="mn-infoCard__text">
+              Sẽ mở khi Social Core đủ ổn. Thiết kế đã có — chưa deploy.
+              Ưu tiên ổn định lõi trước.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">○ Phase 3+</div>
+            <div class="mn-infoCard__title">Ecosystem Modules</div>
+            <div class="mn-infoCard__text">
+              Messaging, Projects, Market, Nhà chung, Đầu tư — chỉ mở theo thứ tự
+              sau khi trust layer Phase 2 đủ vững.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="mn-homeCTA">
+        <div class="mn-homeCTA__inner">
+          <div>
+            <div class="mn-statCard__label">Tham gia sớm</div>
+            <div style="margin-top:8px;font-size:20px;font-weight:700;">Social Core sắp mở — bắt đầu từ feed thật.</div>
+            <div style="margin-top:6px;color:var(--muted);font-size:15px;">Không hứa hẹn, không quảng cáo — chỉ build và mở khi đã sẵn sàng.</div>
+          </div>
+          <div class="mn-homeCTA__actions">
+            <a class="mn-btn mn-btn--primary" href="/feed/">Vào Social Core</a>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem lộ trình</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="mn-footer">
+    <div class="mn-shell mn-footer__inner">
+      <div class="mn-footer__brand">
+        <span class="mn-brand__mark mn-brand__mark--sm">MN</span>
+        <div>
+          <div class="mn-footer__name">Muôn Nơi</div>
+          <div class="mn-footer__tag">Social-first · privacy-first · module-first</div>
+        </div>
+      </div>
+      <div class="mn-footer__right">
+        <a class="mn-footer__link" href="/">Trang chủ</a>
+        <a class="mn-footer__link" href="/ecosystem/">Hệ sinh thái</a>
+        <a class="mn-footer__link" href="/security/">Bảo mật</a>
+        <a class="mn-footer__link" href="/guide/">Hướng dẫn</a>
+        <a class="mn-footer__link" href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a class="mn-footer__link" href="/investment/" data-route="/investment/">Đầu tư</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/ui.js?v=20260327" defer></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Bắn các thiên thạch rơi xuống.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ban Sao Bang — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #meteor-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="ban-sao-bang">
+
+<div id="hud-root"></div>
+<canvas id="meteor-canvas" width="320" height="320" aria-label="Meteor canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Ban Sao Bang</h1>
+    <p>Bắn các thiên thạch rơi xuống trước khi chúng chạm đất.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'ban-sao-bang';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Ban Sao Bang', desc: 'Thiên thạch sẽ rơi từ trên xuống. Chạm vào chúng để bắn. Nếu thiên thạch chạm đất, bạn mất mạng.' },
+      { title: 'Tốc độ tăng', desc: 'Càng về sáu thiên thạch rơi càng nhanh, càng nhiều va càng lớn. Tap trung!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Ban càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Meteor Blaster', desc: 'Meteors fall from above. Tap them to blast. If a meteor reaches the ground, you lose a life.' },
+      { title: 'Speed Up', desc: 'Later waves drop faster, bigger, and more meteors. Stay alert!' },
+      { title: 'Endless', desc: 'No limit. Blast as many as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('meteor-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let meteors = [], score = 0, level = 1, lives = 3, isPlaying = false, speed = 1.5, spawnRate = 0.015, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function spawnMeteor() {
+    const r = 10 + Math.random() * 15;
+    meteors.push({ x: r + Math.random() * (canvas.width - r * 2), y: -r, r, speed: speed + Math.random() * 1.5 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Stars
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 20; i++) { ctx.beginPath(); ctx.arc(20 + (i * 37) % canvas.width, 20 + (i * 53) % (canvas.height / 2), 1, 0, Math.PI * 2); ctx.fill(); }
+    // Ground
+    ctx.fillStyle = '#374151'; ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+    // Meteors
+    for (const m of meteors) {
+      ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b'; ctx.fill();
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    // Lives
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i]; m.y += m.speed;
+      if (m.y > canvas.height - m.r) { meteors.splice(i, 1); lives--; if (lives <= 0) { endGame(); return; } continue; }
+    }
+    if (Math.random() < spawnRate) spawnMeteor();
+    if (score > 0 && score % 80 === 0) { level++; speed += 0.4; spawnRate = Math.min(0.05, spawnRate + 0.003); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i]; const dx = x - m.x, dy = y - m.y;
+      if (dx * dx + dy * dy < m.r * m.r) { meteors.splice(i, 1); score += 15; return; }
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); meteors = []; score = 0; level = 1; lives = 3; speed = 1.5; spawnRate = 0.015; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

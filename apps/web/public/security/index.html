@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0f14" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <title>Muôn Nơi | Bảo mật</title>
+  <meta name="description" content="Bảo mật Muôn Nơi được xây theo hướng security by default, anti-bot, verify nhiều lớp, dữ liệu tối thiểu, self-hosted assets và route rõ ràng để giữ trust cho toàn hệ." />
+  <link rel="canonical" href="https://www.muonnoi.org/security/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Muôn Nơi | Bảo mật" />
+  <meta property="og:description" content="Security by default. Anti-bot, verify, trust layer và nguyên tắc dữ liệu tối thiểu." />
+  <meta property="og:url" content="https://www.muonnoi.org/security/" />
+  <meta property="og:image" content="https://www.muonnoi.org/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/assets/ui.css?v=1.0.1" />
+</head>
+<body class="mn-body">
+  <a class="mn-srOnlyFocus" href="#main">Đi tới nội dung</a>
+
+  <div class="mn-bg" aria-hidden="true">
+    <div class="mn-bg__grid"></div>
+    <div class="mn-bg__glow mn-bg__glow--1"></div>
+    <div class="mn-bg__glow mn-bg__glow--2"></div>
+    <div class="mn-bg__noise"></div>
+  </div>
+
+  <header class="mn-topbar" role="banner">
+    <div class="mn-shell mn-topbar__inner">
+      <a class="mn-brand" href="/" data-route="/">
+        <span class="mn-brand__mark">MN</span>
+        <span class="mn-brand__text">
+          <span class="mn-brand__name">Muôn Nơi</span>
+          <span class="mn-brand__sub" data-i18n="brandSub">Hạ tầng số cho đời sống thật</span>
+        </span>
+      </a>
+
+      <nav class="mn-mainNav" aria-label="Điều hướng chính">
+        <a href="/" data-route="/" data-i18n="navHome">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/" data-i18n="navEcosystem">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/" data-i18n="navRoadmap">Lộ trình</a>
+        <a href="/security/" data-route="/security/" data-i18n="navSecurity">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/" data-i18n="navGuide">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+      </nav>
+
+      <div class="mn-topbar__actions">
+        <button class="mn-iconBtn" type="button" id="btnTheme" aria-label="Đổi giao diện">
+          <span id="themeIcon">◐</span>
+        </button>
+
+        <button class="mn-langBtn" type="button" id="btnLang" aria-label="Đổi ngôn ngữ">
+          <span id="langLabel">Tiếng Việt</span>
+        </button>
+
+        <a class="mn-btn mn-btn--primary" href="/feed/" data-route="/feed/" data-i18n="openApp">Mở hệ</a>
+
+        <button class="mn-burger" id="mnBurger" type="button" aria-label="Mở menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mn-mobileMenu" id="mnMobileMenu" hidden>
+      <div class="mn-mobileMenu__links">
+        <a href="/" data-route="/" data-i18n="navHome">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/" data-i18n="navEcosystem">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/" data-i18n="navRoadmap">Lộ trình</a>
+        <a href="/security/" data-route="/security/" data-i18n="navSecurity">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/" data-i18n="navGuide">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a href="/feed/" data-route="/feed/" data-i18n="openApp">Mở hệ</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="mn-page">
+    <div class="mn-shell">
+
+      <!-- HERO -->
+      <section class="mn-homeHero">
+        <div class="mn-homeHero__content">
+          <div class="mn-kicker">SECURITY • trust-first • anti-bot • minimal-data</div>
+
+          <h1 class="mn-h1">
+            Bảo Mật Muôn Nơi
+            <br />
+            Không Chỉ Là Chính Sách,
+            <br />
+            Mà Là Cách Hệ Được Xây.
+          </h1>
+
+          <p class="mn-homeHero__desc">
+            Muôn Nơi không xem bảo mật như phần trang trí sau cùng. 
+            Security phải đi cùng kiến trúc, route, dữ liệu, verify, complaints, admin và cách hệ mở rộng.
+            Nếu social core không có trust layer rõ ràng, mọi phần mở rộng về sau đều dễ bị nhiễu, lạm dụng hoặc mất niềm tin.
+          </p>
+
+          <div class="mn-homeHero__actions">
+            <a class="mn-btn mn-btn--primary" href="/verify/">Mở verify</a>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem roadmap</a>
+            <a class="mn-btn mn-btn--ghost" href="/guide/">Đọc hướng dẫn</a>
+          </div>
+
+          <div class="mn-homeHero__metaGrid">
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Nguyên tắc</div>
+              <div class="mn-statCard__value">
+                Chỉ thu thập mức dữ liệu cần thiết cho vận hành. Không biến người dùng thành nguyên liệu cho hệ.
+              </div>
+            </article>
+
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Trọng tâm</div>
+              <div class="mn-statCard__value">
+                Security by default, anti-bot nhiều lớp, verify rõ ràng, complaints minh bạch, route thật và tài nguyên tự chủ.
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <aside class="mn-homeHero__preview">
+          <div class="mn-previewWindow">
+            <div class="mn-previewWindow__top">
+              <div class="mn-previewWindow__dots"><span></span><span></span><span></span></div>
+              <div class="mn-previewWindow__title">Muon Noi Security Stack</div>
+            </div>
+
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">01</span>
+                <div>
+                  <div class="mn-previewPost__name">Headers</div>
+                  <div class="mn-previewPost__time">Baseline</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">
+                CSP, HSTS, COOP, CORP, Permissions-Policy và Cache-Control.
+              </div>
+              <div class="mn-previewPost__body">
+                Lớp nền đầu tiên để giảm bề mặt tấn công và làm rõ tài nguyên nào được phép chạy.
+              </div>
+              <div class="mn-previewPost__actions">
+                <span>CSP</span>
+                <span>Headers</span>
+                <span>Baseline</span>
+              </div>
+            </div>
+
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">02</span>
+                <div>
+                  <div class="mn-previewPost__name">Trust Layer</div>
+                  <div class="mn-previewPost__time">Operational</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">
+                Verify, complaints, admin review, anti-bot và cơ chế xử lý minh bạch.
+              </div>
+              <div class="mn-previewPost__body">
+                Đây là phần chuyển bảo mật từ “technical shield” thành “operational trust layer”.
+              </div>
+              <div class="mn-previewPost__actions">
+                <span>Trust</span>
+                <span>Verify</span>
+                <span>Review</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- PRINCIPLES -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Nguyên tắc bảo mật cốt lõi</h2>
+          <p class="mn-sectionDesc">
+            Muôn Nơi giữ một số nguyên tắc rất rõ để mọi lớp phía trên không phá trust của hệ.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--4">
+          <article class="mn-miniCard">
+            <h3>Security by default</h3>
+            <p>Mặc định an toàn trước, tiện sau. Không mở rộng tùy tiện rồi vá sau.</p>
+          </article>
+          <article class="mn-miniCard">
+            <h3>Minimal data</h3>
+            <p>Chỉ giữ dữ liệu cần thiết cho vận hành, không thu quá mức để “đề phòng”.</p>
+          </article>
+          <article class="mn-miniCard">
+            <h3>Route rõ ràng</h3>
+            <p>Page thật, link thật, điều hướng thật để giảm nhiễu và dễ kiểm soát.</p>
+          </article>
+          <article class="mn-miniCard">
+            <h3>Trust layer</h3>
+            <p>Verify, complaints, review, admin và cộng đồng phải đi cùng nhau.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- TECHNICAL LAYER -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Lớp kỹ thuật nền</h2>
+          <p class="mn-sectionDesc">
+            Đây là phần bảo mật ở cấp cấu hình và delivery layer, giúp web public sạch và khó bị phá hơn.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Headers</div>
+            <h3 class="mn-infoCard__title">CSP và security headers</h3>
+            <p class="mn-infoCard__text">
+              CSP giới hạn script, style, connect-src và tài nguyên chạy trong hệ. 
+              Cùng với HSTS, COOP, CORP và Permissions-Policy, đây là baseline bắt buộc.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/security/">Đang áp dụng</a>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Assets</div>
+            <h3 class="mn-infoCard__title">Tự chủ tài nguyên</h3>
+            <p class="mn-infoCard__text">
+              CSS, JS, favicon, manifest và route được self-host trong hệ để giảm phụ thuộc bên ngoài.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/guide/">Xem cấu trúc</a>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Routing</div>
+            <h3 class="mn-infoCard__title">Đường dẫn thật, không giả</h3>
+            <p class="mn-infoCard__text">
+              Các route chính như ecosystem, roadmap, security, guide phải hoạt động thật, tránh trang trắng và điều hướng mơ hồ.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem thứ tự mở route</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- TRUST LAYER -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Trust layer vận hành</h2>
+          <p class="mn-sectionDesc">
+            Bảo mật không đủ nếu không có lớp vận hành đi kèm. Đây là phần giữ niềm tin trong đời sống thật của hệ.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Verify</div>
+            <h3 class="mn-infoCard__title">Xác minh nhiều lớp</h3>
+            <p class="mn-infoCard__text">
+              Xác minh giúp tăng trọng lượng phát biểu, giảm bot và giúp cộng đồng nhìn rõ mức độ tin cậy của tài khoản.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/verify/">Mở verify</a>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Complaints</div>
+            <h3 class="mn-infoCard__title">Khiếu nại và phản ánh minh bạch</h3>
+            <p class="mn-infoCard__text">
+              Không có trust layer nếu người dùng không biết phản ánh ở đâu và hệ xử lý ra sao.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/complaints/">Mở complaints</a>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Admin Review</div>
+            <h3 class="mn-infoCard__title">Quản trị có nơi đứng rõ</h3>
+            <p class="mn-infoCard__text">
+              Admin phải là lớp vận hành có cấu trúc, thay vì một khu vực mơ hồ, ẩn và thiếu nguyên tắc.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/admin/">Mở admin</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- ANTI BOT -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Anti-bot và chống lạm dụng</h2>
+          <p class="mn-sectionDesc">
+            Nếu social core bị bot làm loãng, mọi giá trị thật sẽ bị chìm xuống dưới nhiễu.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Detection</div>
+            <h3 class="mn-infoCard__title">Phát hiện tín hiệu bất thường</h3>
+            <p class="mn-infoCard__text">
+              Tốc độ, hành vi, pattern lặp, route abuse và tín hiệu không tự nhiên cần được nhận diện theo tầng.
+            </p>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Rate limiting</div>
+            <h3 class="mn-infoCard__title">Giảm lạm dụng theo nhịp</h3>
+            <p class="mn-infoCard__text">
+              Không phải chặn tất cả. Phải giới hạn đúng chỗ để hệ vẫn dùng được nhưng khó bị quét hoặc spam.
+            </p>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Escalation</div>
+            <h3 class="mn-infoCard__title">Tăng xác minh khi rủi ro tăng</h3>
+            <p class="mn-infoCard__text">
+              Khi tín hiệu rủi ro tăng, hệ cần có cách đẩy sang verify hoặc review thay vì xử lý mù.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- DATA PRINCIPLES -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Nguyên tắc dữ liệu</h2>
+          <p class="mn-sectionDesc">
+            Một hệ social nếu thu quá nhiều dữ liệu sẽ tự mâu thuẫn với lời hứa về trust.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--4">
+          <article class="mn-miniCard">
+            <h3>Dữ liệu tối thiểu</h3>
+            <p>Chỉ giữ những gì thực sự cần cho vận hành, chống abuse và cải tiến hợp lý.</p>
+          </article>
+          <article class="mn-miniCard">
+            <h3>Không thu để phòng hờ</h3>
+            <p>Không tích lũy vô hạn chỉ vì “sau này có thể cần”.</p>
+          </article>
+          <article class="mn-miniCard">
+            <h3>Phân tách lớp</h3>
+            <p>Social, verify, complaints, admin và analytics nội bộ phải có vai trò riêng.</p>
+          </article>
+          <article class="mn-miniCard">
+            <h3>Minh bạch mục đích</h3>
+            <p>Người dùng phải hiểu phần nào dùng để vận hành, phần nào dùng để bảo vệ hệ.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- WHY SECURITY MATTERS -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Vì sao security phải đi trước</h2>
+          <p class="mn-sectionDesc">
+            Khi một hệ social mở nhanh mà security không đi trước, chính cộng đồng thật sẽ là bên trả giá.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">01</div>
+            <h3 class="mn-infoCard__title">Scale mà không trust sẽ làm loãng mọi giá trị</h3>
+            <p class="mn-infoCard__text">
+              Tăng người dùng nhanh không có nghĩa là mạnh hơn nếu feed và trust đã bị nhiễu từ đầu.
+            </p>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">02</div>
+            <h3 class="mn-infoCard__title">Bảo mật là điều kiện của hệ sinh thái</h3>
+            <p class="mn-infoCard__text">
+              Living, working, learning, investing đều cần một nền đủ an toàn và đáng tin để bám vào.
+            </p>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">03</div>
+            <h3 class="mn-infoCard__title">Giữ chuẩn từ đầu sẽ đỡ vá về sau</h3>
+            <p class="mn-infoCard__text">
+              Khi bảo mật được xây từ lõi, các module về sau sẽ dễ đồng bộ hơn cả về kỹ thuật lẫn vận hành.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="mn-homeCTA">
+        <div class="mn-homeCTA__inner">
+          <div>
+            <h2 class="mn-h2">Trust không đến từ lời hứa. Trust đến từ cách hệ vận hành.</h2>
+            <p class="mn-sectionDesc">
+              Muôn Nơi cần giữ security như một phần lõi của sản phẩm, không phải một ghi chú bên lề.
+            </p>
+          </div>
+
+          <div class="mn-homeCTA__actions">
+            <a class="mn-btn mn-btn--primary" href="/verify/">Mở verify</a>
+            <a class="mn-btn mn-btn--ghost" href="/complaints/">Mở complaints</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="mn-footer">
+    <div class="mn-shell mn-footer__inner">
+      <div class="mn-footer__brand">
+        <span class="mn-brand__mark mn-brand__mark--sm">MN</span>
+        <div>
+          <div class="mn-footer__name">Muôn Nơi</div>
+          <div class="mn-footer__tag" data-i18n="footerTag">Social-first • privacy-first • module-first</div>
+        </div>
+      </div>
+
+      <div class="mn-footer__right">
+        <a class="mn-footer__link" href="/" data-route="/">Trang chủ</a>
+        <a class="mn-footer__link" href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a class="mn-footer__link" href="/security/" data-route="/security/">Bảo mật</a>
+        <a class="mn-footer__link" href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a class="mn-footer__link" href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a class="mn-footer__link" href="/investment/" data-route="/investment/">Đầu tư</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/ui.js?v=1.0.1" defer></script>
+</body>
+</html>

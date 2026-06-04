@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Tổ hợp xác suất và thống kê ứng dụng. Tập 28."/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Toán Học — Tập 28 · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+  <style>
+    .game-box{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:20px;text-align:center;margin:16px 0}
+    .game-box h3{margin:0 0 8px}
+    .actions{display:flex;gap:10px;justify-content:center;margin:16px 0}
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Toán Học — Tập 28</b></div>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="k">Điểm</div><div class="v" id="hScore">0</div></div>
+      <div class="stat"><div class="k">Mức</div><div class="v" id="hLevel">1</div></div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="overlay" id="overlay">
+        <h2>Toán Học — Tập 28</h2>
+        <p class="small">Tổ hợp xác suất và thống kê ứng dụng. Tập 28.</p>
+        <button class="btn" id="startBtn">Bắt đầu</button>
+        <div class="note" id="ovBest"></div>
+      </div>
+      <div id="gameArea" style="display:none">
+        <div class="game-box">
+          <h3>🎮 Toán Học — Tập 28</h3>
+          <p class="small">Tổ hợp xác suất và thống kê ứng dụng. Tập 28.</p>
+          <div class="actions">
+            <button class="btn" id="playBtn">▶ Chơi</button>
+            <button class="btn secondary" id="scoreBtn">💾 Lưu điểm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+    let score=0,level=1;
+    document.getElementById('startBtn').onclick = ()=>{
+      document.getElementById('overlay').style.display='none';
+      document.getElementById('gameArea').style.display='';
+    };
+    document.getElementById('playBtn').onclick = ()=>{
+      score += 10;
+      document.getElementById('hScore').textContent = score;
+      alert('+10 điểm!');
+    };
+    document.getElementById('scoreBtn').onclick = ()=>{
+      MNPlays.saveProgress('edu0028',{score,level});
+      alert('Đã lưu: ' + score + 'đ');
+    };
+    (async()=>{
+      const p=await MNPlays.loadProgress('edu0028');
+      if(p){score=p.score||0;level=p.level||1;document.getElementById('hScore').textContent=score;document.getElementById('hLevel').textContent=level;}
+      document.getElementById('ovBest').textContent = p?`Kỷ lục: ${p.score||0}đ` : '';
+    })();
+  </script>
+</body>
+</html>

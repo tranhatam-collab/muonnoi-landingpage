@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Thống kê — Muôn Nơi · Plays</title>
+  <link rel="stylesheet" href="assets/plays.css">
+  <style>
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0}
+    .stat-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+    .stat-box .num{font-size:32px;font-weight:700;color:var(--brand2);display:block}
+    .stat-box .label{font-size:12px;color:var(--muted);margin-top:4px}
+    .lb{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+    .lb h3{margin:0 0 12px}
+    .lb-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+    .lb-row:last-child{border-bottom:none}
+    .empty{color:var(--muted);text-align:center;padding:20px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand"><div class="mark"></div><div><h1>Muôn Nơi · Plays</h1><div class="small">Thống kê cá nhân</div></div></div>
+      <div class="nav"><a class="pill" href="index.html">← Mục lục</a></div>
+    </div>
+
+    <h2>📊 Thống kê tổng quan</h2>
+    <div class="stats-grid" id="stats"></div>
+
+    <div class="lb">
+      <h3>🏆 Điểm cao nhất từng game</h3>
+      <div id="scores"></div>
+    </div>
+
+    <div class="lb">
+      <h3>🕒 Chơi gần đây</h3>
+      <div id="recent"></div>
+    </div>
+  </div>
+
+  <script src="assets/catalog.js"></script>
+  <script src="assets/plays-sdk.js"></script>
+  <script>
+    const C = window.MN_CATALOG;
+
+    // Aggregate stats from localStorage
+    let totalScore = 0, totalPlayed = 0, bestScore = 0, bestGame = '';
+    const scores = [];
+
+    for (const g of C.games) {
+      const key = 'mn_plays_progress_' + g.id;
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p.score) {
+            totalScore += p.score;
+            totalPlayed++;
+            scores.push({ id: g.id, name: g.name ? g.name.vi : g.id, score: p.score, level: p.level || 0 });
+            if (p.score > bestScore) { bestScore = p.score; bestGame = g.name ? g.name.vi : g.id; }
+          }
+        }
+      } catch(e) {}
+    }
+
+    scores.sort((a,b) => b.score - a.score);
+
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-box"><span class="num">${totalPlayed}</span><div class="label">Game đã chơi</div></div>
+      <div class="stat-box"><span class="num">${totalScore}</span><div class="label">Tổng điểm</div></div>
+      <div class="stat-box"><span class="num">${bestScore}</span><div class="label">Điểm cao nhất<br/>${bestGame || '—'}</div></div>
+      <div class="stat-box"><span class="num">${C.counts.total}</span><div class="label">Tổng game</div></div>
+    `;
+
+    document.getElementById('scores').innerHTML = scores.length
+      ? scores.slice(0, 10).map(s => `<div class="lb-row"><span>${s.name}</span><span>${s.score}đ · Mức ${s.level}</span></div>`).join('')
+      : '<div class="empty">Chưa có dữ liệu. Chơi game để ghi điểm!</div>';
+
+    // Recent
+    try {
+      const recent = JSON.parse(localStorage.getItem('mn_recent_games') || '[]');
+      const recentIds = [...new Set(recent)].slice(0, 10);
+      document.getElementById('recent').innerHTML = recentIds.length
+        ? recentIds.map(id => {
+            const g = C.games.find(x => x.id === id);
+            if (!g) return '';
+            const name = g.name ? g.name.vi : g.id;
+            return `<div class="lb-row"><span><a href="detail.html?id=${g.id}">${name}</a></span><span>▶</span></div>`;
+          }).join('')
+        : '<div class="empty">Chưa có game nào được chơi gần đây.</div>';
+    } catch(e) {
+      document.getElementById('recent').innerHTML = '<div class="empty">Chưa có dữ liệu.</div>';
+    }
+  </script>
+</body>
+</html>

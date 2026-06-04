@@ -1,0 +1,19 @@
+{
+  "name": "Người Việt Muôn Nơi",
+  "short_name": "NVMN",
+  "description": "Nhánh hành trình của Muôn Nơi dành cho người Việt trong nước và toàn cầu.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0f14",
+  "theme_color": "#0a0f14",
+  "lang": "vi",
+  "categories": ["education", "lifestyle", "community"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Muôn Nơi – App</title>
+
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="referrer" content="no-referrer" />
+
+  <link rel="icon" href="/assets/brand/mn.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/assets/site.css?v=1.0.1" />
+</head>
+
+<body>
+  <header class="topbar" role="banner">
+    <a class="brand" href="/" aria-label="Muôn Nơi">
+      <img class="logo" src="/assets/brand/mn.svg" alt="mn" />
+      <div class="brand__text">
+        <div class="brand__name">Muôn Nơi</div>
+        <div class="brand__tag">Muốn nói</div>
+      </div>
+    </a>
+
+    <nav class="nav" aria-label="Top navigation">
+      <a class="btn btn--ghost" href="/" id="tHome">Trang chủ</a>
+      <button id="langBtn" class="btn btn--ghost" type="button" aria-label="Đổi ngôn ngữ">Tiếng Việt</button>
+    </nav>
+  </header>
+
+  <main class="container app" role="main">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="sidebar__section">
+        <div class="sidebar__title" id="tMenu">Menu</div>
+
+        <a class="side" data-href="/app/join" href="/app/join" id="tJoin">Đăng nhập</a>
+        <a class="side" data-href="/app/me" href="/app/me" id="tMe">Tài khoản</a>
+
+        <div class="hr"></div>
+
+        <span class="side disabled" aria-disabled="true" id="tFeed">Bảng tin</span>
+        <span class="side disabled" aria-disabled="true" id="tGroups">Nhóm</span>
+        <span class="side disabled" aria-disabled="true" id="tShop">Cửa hàng số</span>
+      </div>
+
+      <div class="sidebar__section">
+        <div class="sidebar__title" id="tSecurity">Security</div>
+        <div class="hint" id="tSecHint">
+          Khóa chuẩn: CSP, HttpOnly session, allowlist origin, D1 rate-limit, anti-bot.
+        </div>
+      </div>
+
+      <div class="sidebar__section">
+        <div class="sidebar__title">Status</div>
+        <div class="hint" id="mnStatus">
+          App shell ready. Auth enabled. Feed unlock next.
+        </div>
+      </div>
+    </aside>
+
+    <section class="content" aria-label="Content">
+      <div id="view" aria-live="polite"></div>
+
+      <noscript>
+        <div class="card" style="margin-top:14px">
+          <h3>JavaScript required</h3>
+          <p class="note">Ứng dụng cần bật JavaScript để hoạt động.</p>
+        </div>
+      </noscript>
+    </section>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <span class="muted">App shell • module-first • locked baseline</span>
+    <span class="muted">© <span id="year"></span> mn</span>
+  </footer>
+
+  <script src="/assets/site.js?v=1.0.1" defer></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Chọn nghĩa đúng cho từ tiếng Anh. Càng nhanh, càng nhiều điểm!"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Thợ Săn Nghĩa · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+  <style>
+    .word-box{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:20px;text-align:center;font-size:22px;font-weight:700;margin:16px 0}
+    .meanings{display:grid;gap:10px;margin:16px 0}
+    .meanings button{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:14px;font-size:15px;text-align:left;cursor:pointer}
+    .meanings button:hover{border-color:var(--brand)}
+    .meanings button.correct{border-color:var(--ok);background:rgba(34,197,94,.12)}
+    .meanings button.wrong{border-color:var(--err);background:rgba(239,68,68,.12)}
+    .timer{font-size:12px;color:var(--warn);margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Thợ Săn Nghĩa</b></div>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="k">Mức</div><div class="v" id="hLevel">1</div></div>
+      <div class="stat"><div class="k">Điểm</div><div class="v" id="hScore">0</div></div>
+      <div class="stat"><div class="k">Streak</div><div class="v" id="hStreak" style="color:var(--warn)">0</div></div>
+    </div>
+    <div class="stage" id="stage">
+      <div id="gameArea" style="display:none">
+        <div class="word-box" id="wordBox">—</div>
+        <div class="timer" id="timer">⏱️ 10s</div>
+        <div class="meanings" id="meanings"></div>
+      </div>
+      <div class="overlay" id="overlay">
+        <h2>Thợ Săn Nghĩa</h2>
+        <p class="small">Chọn nghĩa đúng cho từ tiếng Anh. Càng nhanh, càng nhiều điểm!</p>
+        <button class="btn" id="startBtn">Bắt đầu</button>
+        <div class="note" id="ovBest"></div>
+      </div>
+    </div>
+  </div>
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+    const WORDS = [
+      {w:'Cat',mean:['Mèo','Chó','Chim','Cá']},{w:'Dog',mean:['Chó','Mèo','Ngựa','Heo']},
+      {w:'House',mean:['Nhà','Cửa','Cây','Xe']},{w:'Water',mean:['Nước','Lửa','Gió','Đất']},
+      {w:'Fire',mean:['Lửa','Nước','Băng','Sét']},{w:'Wind',mean:['Gió','Nước','Lửa','Đất']},
+      {w:'Sky',mean:['Trời','Đất','Biển','Núi']},{w:'Earth',mean:['Đất','Trời','Nước','Lửa']},
+      {w:'Sun',mean:['Mặt trời','Mặt trăng','Sao','Mây']},{w:'Moon',mean:['Mặt trăng','Mặt trời','Sao','Hành tinh']},
+      {w:'Star',mean:['Sao','Mặt trăng','Mặt trời','Mây']},{w:'Tree',mean:['Cây','Hoa','Cỏ','Lá']},
+      {w:'Flower',mean:['Hoa','Cây','Lá','Quả']},{w:'Friend',mean:['Bạn','Thù','Người lạ','Cha']},
+      {w:'Family',mean:['Gia đình','Bạn bè','Hàng xóm','Đồng nghiệp']},{w:'Love',mean:['Tình yêu','Thù hận','Buồn','Giận']},
+      {w:'Book',mean:['Sách','Bút','Bàn','Giấy']},{w:'Pen',mean:['Bút','Sách','Giấy','Thước']},
+      {w:'Table',mean:['Bàn','Ghế','Tủ','Giường']},{w:'Chair',mean:['Ghế','Bàn','Tủ','Giường']}
+    ];
+    let level=1,score=0,streak=0,current=null,timer=null,timeLeft=10;
+    const hLevel=document.getElementById('hLevel'),hScore=document.getElementById('hScore'),hStreak=document.getElementById('hStreak');
+    const wordBox=document.getElementById('wordBox'),meaningsEl=document.getElementById('meanings'),timerEl=document.getElementById('timer');
+
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+    function pickWord(){return WORDS[Math.floor(Math.random()*WORDS.length)];}
+    function makeRound(){
+      clearInterval(timer);
+      current = pickWord();
+      timeLeft = Math.max(5, 12 - Math.floor(level/2));
+      wordBox.textContent = current.w;
+      const opts = shuffle([...current.mean]);
+      meaningsEl.innerHTML = opts.map((o,i)=>`<button data-i="${i}">${o}</button>`).join('');
+      meaningsEl.querySelectorAll('button').forEach(b=>{
+        b.onclick = ()=>check(b);
+      });
+      updateTimer();
+      timer = setInterval(()=>{timeLeft--; updateTimer(); if(timeLeft<=0){timeUp();}}, 1000);
+    }
+    function updateTimer(){timerEl.textContent = `⏱️ ${timeLeft}s`; if(timeLeft<=3) timerEl.style.color='var(--err)'; else timerEl.style.color='var(--warn)';}
+    function timeUp(){clearInterval(timer); streak=0; hStreak.textContent=0; const right=meaningsEl.querySelector(`button:nth-child(1)`); if(right) right.classList.add('correct'); meaningsEl.querySelectorAll('button').forEach(b=>b.disabled=true); setTimeout(makeRound,1500);}
+    function check(btn){
+      clearInterval(timer);
+      const ans = btn.textContent;
+      const correct = ans === current.mean[0];
+      if(correct){btn.classList.add('correct'); streak++; score += 10*streak + timeLeft;}
+      else{btn.classList.add('wrong'); streak=0; const right=Array.from(meaningsEl.querySelectorAll('button')).find(b=>b.textContent===current.mean[0]); if(right) right.classList.add('correct');}
+      hScore.textContent=score; hStreak.textContent=streak;
+      if(score>=level*60){level++; hLevel.textContent=level;}
+      meaningsEl.querySelectorAll('button').forEach(b=>b.disabled=true);
+      setTimeout(makeRound, correct?800:1500);
+      MNPlays.saveProgress('tho-san-nghia',{level,score});
+    }
+    document.getElementById('startBtn').onclick = ()=>{
+      document.getElementById('overlay').style.display='none';
+      document.getElementById('gameArea').style.display='';
+      makeRound();
+    };
+    (async()=>{
+      const p=await MNPlays.loadProgress('tho-san-nghia');
+      if(p){level=p.level||1;score=p.score||0;hLevel.textContent=level;hScore.textContent=score;}
+      document.getElementById('ovBest').textContent = p?`Kỷ lục: Mức ${p.level||1} · ${p.score||0}đ`:'';
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+name = "plays-muonnoi"
+compatibility_date = "2026-06-02"
+pages_build_output_dir = "."
+
+# [env.production]
+# routes = [
+#   { pattern = "plays.muonnoi.org/*", zone_name = "muonnoi.org" }
+# ]
+
+# [[env.production.vars]]
+# ENVIRONMENT = "production"
+
+# Plays is static HTML/JS/CSS — served via Cloudflare Pages
+# Deploy: npx wrangler pages deploy . --project-name=plays-muonnoi --branch=main

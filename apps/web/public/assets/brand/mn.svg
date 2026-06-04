@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none"
+  xmlns="http://www.w3.org/2000/svg" role="img" aria-label="muonnoi">
+
+  <defs>
+    <!-- Blue like your sample -->
+    <linearGradient id="mnBlue" x1="0" y1="120" x2="0" y2="320">
+      <stop offset="0%" stop-color="#1F3B5B"/>
+      <stop offset="100%" stop-color="#243F5F"/>
+    </linearGradient>
+
+    <!-- White body slightly shaded -->
+    <linearGradient id="mnWhite" x1="0" y1="120" x2="0" y2="320">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EAEAEA"/>
+    </linearGradient>
+
+    <!-- Soft drop shadow like the mock -->
+    <filter id="mnShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+
+    <!-- Text shadow -->
+    <filter id="txtShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Cut notch to create the “interlock” gap at the top-center -->
+    <mask id="notchMask">
+      <rect width="512" height="512" fill="white"/>
+      <!-- small notch (removes a tiny wedge between the two arches) -->
+      <path d="M262 184 L292 154 L322 184 L292 214 Z" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- LOGO MARK (centered) -->
+  <g filter="url(#mnShadow)" mask="url(#notchMask)">
+
+    <!-- LEFT ARCH (blue) -->
+    <!-- Outer arch -->
+    <path d="
+      M140 320
+      L140 210
+      C140 150 185 110 245 110
+      C305 110 350 150 350 210
+      L350 320
+      L310 320
+      L310 214
+      C310 176 282 150 245 150
+      C208 150 180 176 180 214
+      L180 320
+      Z"
+      fill="url(#mnBlue)"/>
+
+    <!-- Inner cutout to make the arch thickness -->
+    <path d="
+      M200 320
+      L200 220
+      C200 190 222 170 252 170
+      C282 170 304 190 304 220
+      L304 320
+      L268 320
+      L268 222
+      C268 214 260 206 252 206
+      C244 206 236 214 236 222
+      L236 320
+      Z"
+      fill="rgba(0,0,0,0)"/>
+
+    <!-- RIGHT ARCH (white) -->
+    <!-- Outer arch -->
+    <path d="
+      M250 320
+      L250 210
+      C250 150 295 110 355 110
+      C415 110 460 150 460 210
+      L460 320
+      L420 320
+      L420 214
+      C420 176 392 150 355 150
+      C318 150 290 176 290 214
+      L290 320
+      Z"
+      fill="url(#mnWhite)"/>
+
+    <!-- Inner cutout to make thickness -->
+    <path d="
+      M310 320
+      L310 220
+      C310 190 332 170 362 170
+      C392 170 414 190 414 220
+      L414 320
+      L378 320
+      L378 222
+      C378 214 370 206 362 206
+      C354 206 346 214 346 222
+      L346 320
+      Z"
+      fill="rgba(0,0,0,0)"/>
+
+    <!-- Center overlap “ridge” (tiny highlight to mimic 3D seam) -->
+    <path d="M292 150 C280 162 270 174 262 186 C270 196 280 208 292 220 C304 208 314 196 322 186 C314 174 304 162 292 150 Z"
+      fill="rgba(0,0,0,0.08)"/>
+  </g>
+
+  <!-- WORDMARK -->
+  <g filter="url(#txtShadow)">
+    <text x="256" y="410" text-anchor="middle"
+      font-family="Poppins, Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"
+      font-size="72" font-weight="800"
+      fill="#FFFFFF" letter-spacing="1">
+      muonnoi
+    </text>
+  </g>
+</svg>

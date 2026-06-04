@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://nguoiviet.muonnoi.org/sitemap.xml
+
+# Người Việt Muôn Nơi · A journey layer of Muôn Nơi
+# https://nguoiviet.muonnoi.org/

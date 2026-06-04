@@ -1,0 +1,15 @@
+node_modules/
+.wrangler/
+dist/
+.DS_Store
+.env
+.env.*
+# Claude Code working dir — never commit
+.claude/
+.wrangler/
+*.corrupt-*/
+muonnoi-ai/
+muonnoi-ai-machine/
+muonnoi-app/
+muonnoi-node/
+docs/brand/*.zip

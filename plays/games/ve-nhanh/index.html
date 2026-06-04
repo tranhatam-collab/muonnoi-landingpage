@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Vẽ theo yêu cầu trong thời gian.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ve Nhanh — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #draw-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #draw-prompt { text-align: center; font-size: 1.3rem; font-weight: 600; color: #f59e0b; margin: 0.5rem 0; }
+  #draw-timer { text-align: center; font-size: 1rem; color: #9ca3af; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="ve-nhanh">
+
+<div id="hud-root"></div>
+<div id="draw-prompt">Ve hình vuông</div>
+<div id="draw-timer">10s</div>
+<canvas id="draw-canvas" width="300" height="300" aria-label="Draw canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Ve Nhanh</h1>
+    <p>Vẽ theo yêu cầu trong thời gian giới hạn. Cang giong càng nhiều diem!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 've-nhanh';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Vẽ Nhanh', desc: 'Màn hình sẽ yêu cầu bạn vẽ một hình. Dùng chuột hoặc ngón tay vẽ hình đó trên canvas. Càng giống càng nhiều điểm.' },
+      { title: 'Hình phức tạp', desc: 'Càng về sáu hình càng phức tạp (tam giác, hình sao, chữ Z). Thời gian càng ít.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Vẽ càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Quick Draw', desc: 'The screen asks you to draw a shape. Draw ít on the canvas. More similar = more points.' },
+      { title: 'Complex Shapes', desc: 'Later shapes are more complex (star, zigzag). Less time per shape.' },
+      { title: 'Endless', desc: 'No limit. Draw as many as you can!' },
+    ],
+  };
+  const SHAPES = [
+    { vi: 'hinh vuong', en: 'square' },
+    { vi: 'hinh tron', en: 'circle' },
+    { vi: 'hinh tâm giac', en: 'triangle' },
+    { vi: 'duong cheo', en: 'diagonal' },
+    { vi: 'hinh sao', en: 'star' },
+  ];
+  const canvas = document.getElementById('draw-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const promptEl = document.getElementById('draw-prompt');
+  const timerEl = document.getElementById('draw-timer');
+
+  let isDrawing = false, score = 0, level = 1, timeLeft = 10, isPlaying = false, timerInterval = null;
+  let currentShape = 0, pathPoints = [];
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.45, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); pathPoints = []; }
+
+  function startDrawing(e) {
+    if (!isPlaying) return;
+    isDrawing = true; ctx.beginPath();
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    ctx.moveTo(x, y); pathPoints.push({ x, y });
+  }
+
+  function drawMove(e) {
+    if (!isPlaying || !isDrawing) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    ctx.lineTo(x, y); ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.stroke();
+    pathPoints.push({ x, y });
+  }
+
+  function endDrawing() { isDrawing = false; }
+
+  function judge() {
+    if (pathPoints.length < 5) return 0;
+    let matched = 0;
+    for (let i = 1; i < pathPoints.length; i++) {
+      const dx = pathPoints[i].x - pathPoints[i - 1].x;
+      const dy = pathPoints[i].y - pathPoints[i - 1].y;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) matched++;
+    }
+    return Math.min(100, matched * 2 + 10);
+  }
+
+  function submit() {
+    if (!isPlaying) return;
+    const quality = judge();
+    if (quality > 30) {
+      score += Math.floor(timeLeft) * 10 + quality;
+      hud.setScore(score);
+      if (score % 100 === 0) { level++; hud.setLevel(level); }
+      clearInterval(timerInterval); nextShape();
+    } else { endGame(); }
+  }
+
+  function nextShape() {
+    currentShape = Math.min(SHAPES.length - 1, Math.floor(level / 2));
+    promptEl.textContent = LANG === 'vi' ? 'Ve ' + SHAPES[currentShape].vi : 'Draw ' + SHAPES[currentShape].en;
+    timeLeft = Math.max(6, 14 - level); timerEl.textContent = timeLeft + 's';
+    clear(); timerInterval = setInterval(tick, 1000);
+  }
+
+  function tick() { timeLeft--; timerEl.textContent = timeLeft + 's'; if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); } }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); nextShape();
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval); isDrawing = false;
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', startDrawing);
+  canvas.addEventListener('pointermove', drawMove);
+  canvas.addEventListener('pointerup', () => { endDrawing(); submit(); });
+  canvas.addEventListener('pointerleave', endDrawing);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); } });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Cắt dây đúng lúc.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cat Day — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #rope-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 50vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="cat-day">
+
+<div id="hud-root"></div>
+<canvas id="rope-canvas" width="320" height="240" aria-label="Rope canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Cat Day</h1>
+    <p>Cat soi day đúng lúc để rơi vao gio. Nham là thua!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'cat-day';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Cắt Dây', desc: 'Một vật treo trên sợi dây. Sợi dây dao động qua lại. Nhấn màn hình để cắt đúng lúc vật rơi vào giỏ.' },
+      { title: 'Giỏ di chuyển', desc: 'Sau mỗi lần thành công, giỏ sẽ di chuyển và sợi dây dao động nhanh hơn.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn số lần. Thử xem bạn được bao nhiêu điểm!' },
+    ],
+    en: [
+      { title: 'String Cut', desc: 'An object hangs on a swinging rope. Tap to cut at the right moment so ít falls into the basket.' },
+      { title: 'Moving Basket', desc: 'After each success, the basket moves and the rope swings faster.' },
+      { title: 'Endless', desc: 'No limit on attempts. See how many points you can score!' },
+    ],
+  };
+  const canvas = document.getElementById('rope-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let isPlaying = false, score = 0, level = 1, lives = 3;
+  let ropeAngle = 0, ropeSpeed = 0.03, ropeLen = 0, basketX = 0, basketW = 50;
+  let objFalling = false, objX = 0, objY = 0, objVY = 0;
+  let animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 480); const maxH = Math.min(window.innerHeight * 0.4, 300); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); ropeLen = canvas.height * 0.55; }
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const pivotX = w / 2, pivotY = 20;
+
+    // Basket
+    const bx = basketX, by = h - 30;
+    ctx.fillStyle = '#d97706'; ctx.fillRect(bx - basketW / 2, by, basketW, 20);
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.strokeRect(bx - basketW / 2, by, basketW, 20);
+
+    if (!objFalling) {
+      // Rope
+      const ax = pivotX + Math.sin(ropeAngle) * ropeLen;
+      const ay = pivotY + Math.cos(ropeAngle) * ropeLen;
+      ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(ax, ay); ctx.stroke();
+      // Object
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(ax, ay, 10, 0, Math.PI * 2); ctx.fill();
+    } else {
+      // Falling object
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(objX, objY, 10, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Lives
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    if (!objFalling) {
+      ropeAngle += ropeSpeed;
+      if (Math.abs(ropeAngle) > 1.2) ropeSpeed *= -1;
+    } else {
+      objVY += 0.4; objY += objVY;
+      const by = canvas.height - 30;
+      if (objY >= by - 10) {
+        if (Math.abs(objX - basketX) < basketW / 2) {
+          score += Math.max(10, 50 - level * 2);
+          hud.setScore(score); level++;
+          ropeSpeed = Math.min(0.12, ropeSpeed * 1.08);
+          basketW = Math.max(25, basketW - 2);
+          basketX = canvas.width / 2 + (Math.random() - 0.5) * canvas.width * 0.4;
+          hud.setLevel(level);
+          objFalling = false; ropeAngle = 0;
+        } else {
+          lives--; objFalling = false; ropeAngle = 0;
+          if (lives <= 0) { endGame(); return; }
+        }
+      }
+    }
+    draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap() {
+    if (!isPlaying || objFalling) return;
+    const pivotX = canvas.width / 2, pivotY = 20;
+    objX = pivotX + Math.sin(ropeAngle) * ropeLen;
+    objY = pivotY + Math.cos(ropeAngle) * ropeLen;
+    objVY = 0; objFalling = true;
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); score = 0; level = 1; lives = 3; ropeAngle = 0; ropeSpeed = 0.03; objFalling = false;
+    basketX = canvas.width / 2; basketW = 50; hud.setScore(0); hud.setLevel(1); isPlaying = true;
+    update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

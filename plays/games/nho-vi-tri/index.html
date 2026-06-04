@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Nhớ vị trí các ô sáng rồi chọn lại đúng vị trí.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Nhớ Vị Trí</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .pos-grid { display:grid; gap:0.375rem; margin-bottom:1rem; }
+  .pos-cell { width:60px; height:60px; background:#334155; border-radius:0.375rem; cursor:pointer; transition:background 0.3s; }
+  .pos-cell.lit { background:#eab308; }
+  .pos-cell.selected { background:#3b82f6; }
+  .pos-cell.correct { background:#22c55e; }
+  .pos-cell.wrong { background:#ef4444; }
+</style>
+</head>
+<body data-game="nho-vi-tri">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="pos-grid" id="pos-grid"></div>
+  <div id="info" style="color:#94a3b8;font-size:0.875rem;">Quan sát các ô sáng...</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Nhớ Vị Trí</h1>
+    <p>Các ô sẽ sáng lên. Hãy nhớ vị trí và chọn lại đúng thứ tự.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'nho-vi-tri';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Nhớ Vị Trí', desc: 'Một số ô trên lưới sẽ sáng lên trong vài giây.' },
+      { title: 'Chọn lại', desc: 'Sau khi ô tắt, chọn đúng các ô đã sáng theo đúng thứ tự.' },
+      { title: 'Khó hơn', desc: 'Mỗi level lưới lớn hơn và số ô sáng nhiều hơn.' },
+    ],
+    en: [
+      { title: 'Position Memory', desc: 'Some cells on the grid will light up for a few seconds.' },
+      { title: 'Repeat', desc: 'After they dim, select the exact cells in the exact order.' },
+      { title: 'Harder', desc: 'Each level has a bigger grid and more lit cells.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('pos-grid');
+  const infoEl = document.getElementById('info');
+
+  let score = 0, level = 1, isPlaying = false, sequence = [], playerIdx = 0, gridSize = 3;
+
+  function getConfig(lv) {
+    if (lv <= 2) return { size: 3, count: 2 };
+    if (lv <= 4) return { size: 3, count: 3 };
+    if (lv <= 6) return { size: 4, count: 3 };
+    if (lv <= 8) return { size: 4, count: 4 };
+    return { size: 5, count: 4 };
+  }
+
+  function startLevel() {
+    const cfg = getConfig(level);
+    gridSize = cfg.size;
+    gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 60px)`;
+    gridEl.innerHTML = '';
+    const total = gridSize * gridSize;
+    sequence = [];
+    while (sequence.length < cfg.count) {
+      const idx = Math.floor(Math.random() * total);
+      if (!sequence.includes(idx)) sequence.push(idx);
+    }
+    playerIdx = 0;
+    infoEl.textContent = LANG === 'vi' ? 'Quan sát...' : 'Watch...';
+
+    // Render dim cells
+    for (let i = 0; i < total; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'pos-cell';
+      cell.addEventListener('click', () => onCellClick(i));
+      gridEl.appendChild(cell);
+    }
+
+    // Show sequence
+    setTimeout(() => {
+      sequence.forEach((idx, i) => {
+        setTimeout(() => gridEl.children[idx].classList.add('lit'), i * 400);
+        setTimeout(() => gridEl.children[idx].classList.remove('lit'), i * 400 + 600);
+      });
+      setTimeout(() => {
+        infoEl.textContent = LANG === 'vi' ? 'Chọn lại!' : 'Repeat!';
+      }, sequence.length * 400 + 700);
+    }, 500);
+  }
+
+  function onCellClick(i) {
+    if (!isPlaying || playerIdx >= sequence.length) return;
+    const cell = gridEl.children[i];
+    if (i === sequence[playerIdx]) {
+      cell.classList.add('correct');
+      playerIdx++;
+      if (playerIdx >= sequence.length) {
+        score += level * 20;
+        hud.setScore(score);
+        level++;
+        hud.setLevel(level);
+        infoEl.textContent = LANG === 'vi' ? 'Chính xác!' : 'Correct!';
+        setTimeout(startLevel, 800);
+      }
+    } else {
+      cell.classList.add('wrong');
+      setTimeout(endGame, 400);
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    startLevel();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

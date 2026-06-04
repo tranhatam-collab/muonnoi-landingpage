@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Chạm theo nhịp điệu nhạc.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Am Nhac — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #rhythm-track { display: flex; gap: 6px; justify-content: center; margin: 1rem auto; max-width: 360px; height: 300px; position: relative; overflow: hidden; border: 1px solid #374151; border-radius: 8px; background: #111827; }
+  .rhythm-lane { flex: 1; position: relative; border-right: 1px solid #374151; }
+  .rhythm-lane:last-child { border-right: none; }
+  .rhythm-lane .target { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 10px; background: #374151; border-radius: 5px; }
+  .rhythm-lane .note { position: absolute; width: 36px; height: 20px; left: 50%; transform: translateX(-50%); background: #f59e0b; border-radius: 4px; }
+  .rhythm-controls { display: flex; gap: 6px; justify-content: center; margin-top: 0.5rem; }
+  .rhythm-btn { width: 70px; height: 50px; border-radius: 8px; background: #1f2937; border: 1px solid #374151; color: #e5e7eb; font-size: 1rem; font-weight: 600; -webkit-tap-highlight-color: transparent; }
+  .rhythm-btn:active { background: #374151; transform: scale(0.95); }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="am-nhac">
+
+<div id="hud-root"></div>
+<div id="rhythm-track">
+  <div class="rhythm-lane" data-lane="0"><div class="target"></div></div>
+  <div class="rhythm-lane" data-lane="1"><div class="target"></div></div>
+  <div class="rhythm-lane" data-lane="2"><div class="target"></div></div>
+  <div class="rhythm-lane" data-lane="3"><div class="target"></div></div>
+</div>
+<div class="rhythm-controls">
+  <button class="rhythm-btn" data-lane="0">A</button>
+  <button class="rhythm-btn" data-lane="1">S</button>
+  <button class="rhythm-btn" data-lane="2">D</button>
+  <button class="rhythm-btn" data-lane="3">F</button>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Am Nhac</h1>
+    <p>Nhan đúng nút khi note cham vach. Cang chinh xac càng nhiều diem!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'am-nhac';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Âm Nhạc', desc: 'Các note sẽ rơi từ trên xuống. Nhấn đúng nút (A S D F) khi note chạm vạch mục tiêu ở dưới. Càng chính xác càng nhiều điểm.' },
+      { title: 'Nhịp nhanh', desc: 'Càng về sau note rơi càng nhanh và càng nhiều. Tập trung!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Chạm càng nhiều combo càng cao!' },
+    ],
+    en: [
+      { title: 'Rhythm Tap', desc: 'Notes fall from top. Tap the right key (A S D F) when the note hits the target line. More accurate = more points.' },
+      { title: 'Faster Beat', desc: 'Later levels drop notes faster and denser. Stay focused!' },
+      { title: 'Endless', desc: 'No limit. Higher combo = more score!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const lanes = [0, 1, 2, 3];
+  let notes = [], score = 0, level = 1, combo = 0, isPlaying = false, speed = 2, spawnRate = 0.02, animId = null;
+
+  function spawnNote() {
+    const lane = Math.floor(Math.random() * 4);
+    const laneEl = document.querySelector(`.rhythm-lane[data-lane="${lane}"]`);
+    notes.push({ lane, y: -20, el: null, hit: false });
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    const trackH = document.getElementById('rhythm-track').clientHeight;
+    const targetY = trackH - 30;
+    for (let i = notes.length - 1; i >= 0; i--) {
+      const n = notes[i]; n.y += speed;
+      if (!n.el) {
+        const laneEl = document.querySelector(`.rhythm-lane[data-lane="${n.lane}"]`);
+        const noteEl = document.createElement('div'); noteEl.className = 'note'; laneEl.appendChild(noteEl); n.el = noteEl;
+      }
+      n.el.style.top = n.y + 'px';
+      if (n.y > trackH + 20) { if (!n.hit) combo = 0; n.el.remove(); notes.splice(i, 1); }
+    }
+    if (Math.random() < spawnRate) spawnNote();
+    if (combo > 0 && combo % 10 === 0) { level++; speed += 0.3; spawnRate = Math.min(0.06, spawnRate + 0.003); hud.setLevel(level); }
+    hud.setScore(score);
+    animId = requestAnimationFrame(update);
+  }
+
+  function onTap(lane) {
+    if (!isPlaying) return;
+    const trackH = document.getElementById('rhythm-track').clientHeight;
+    const targetY = trackH - 30;
+    for (const n of notes) {
+      if (n.lane === lane && !n.hit && Math.abs(n.y - targetY) < 30) {
+        n.hit = true; combo++; score += 10 + combo;
+        n.el.style.background = '#10b981'; setTimeout(() => { if (n.el) n.el.remove(); }, 200);
+        return;
+      }
+    }
+    combo = 0;
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    notes.forEach(n => { if (n.el) n.el.remove(); }); notes = [];
+    score = 0; level = 1; combo = 0; speed = 2; spawnRate = 0.02; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.querySelectorAll('.rhythm-btn').forEach(btn => {
+    btn.addEventListener('pointerdown', () => onTap(parseInt(btn.dataset.lane)));
+  });
+  document.addEventListener('keydown', (e) => {
+    const map = { a: 0, s: 1, d: 2, f: 3, A: 0, S: 1, D: 2, F: 3 };
+    if (e.key in map) onTap(map[e.key]);
+  });
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Thu thập thức ăn mà không bị bắt.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tim Thuc An — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #forage-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="tim-thuc-an">
+
+<div id="hud-root"></div>
+<canvas id="forage-canvas" width="320" height="320" aria-label="Forage canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tim Thuc An</h1>
+    <p>Thu thấp thuc ăn ma không bị quái vật bat.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'tim-thuc-an';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tim Thuc An', desc: 'Keo nhấn vật để thử thấp các bong vàng (thuc an). Tranh quái vật do. Moi mon ăn tầng them thời gian.' },
+      { title: 'Quai vat', desc: 'Quai vật se dưới theo ban. An càng nhiều, quái vật càng nhanh va càng nhiều.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Thu thấp càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Forage', desc: 'Drag character to collect gold orbs (food). Avoid red monsters. Each food adds time.' },
+      { title: 'Monsters', desc: 'Monsters chase you. More food = faster and more monsters.' },
+      { title: 'Endless', desc: 'No limit. Collect as much as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('forage-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let player = { x: 160, y: 160, r: 10 }, foods = [], monsters = [], score = 0, level = 1, timeLeft = 30, isPlaying = false;
+  let monsterSpeed = 0.6, animId = null, timerInterval = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function spawnFood() { foods.push({ x: 15 + Math.random() * (canvas.width - 30), y: 15 + Math.random() * (canvas.height - 30), r: 6 }); }
+  function spawnMonster() { monsters.push({ x: Math.random() < 0.5 ? -10 : canvas.width + 10, y: Math.random() * canvas.height, r: 10, speed: monsterSpeed + Math.random() * 0.3 }); }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#f59e0b'; for (const f of foods) { ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#ef4444'; for (const m of monsters) { ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.fillText('T: ' + timeLeft, 10, 20);
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (let i = foods.length - 1; i >= 0; i--) {
+      const f = foods[i]; const d = Math.sqrt((player.x - f.x) ** 2 + (player.y - f.y) ** 2);
+      if (d < player.r + f.r) { foods.splice(i, 1); score += 15; timeLeft += 3; if (score % 50 === 0) { level++; monsterSpeed += 0.15; spawnMonster(); hud.setLevel(level); } }
+    }
+    for (const m of monsters) {
+      const dx = player.x - m.x, dy = player.y - m.y; const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      m.x += (dx / d) * m.speed; m.y += (dy / d) * m.speed;
+      if (Math.sqrt((player.x - m.x) ** 2 + (player.y - m.y) ** 2) < player.r + m.r) { endGame(); return; }
+    }
+    if (foods.length < 3) spawnFood();
+    if (Math.random() < 0.005 && monsters.length < level + 1) spawnMonster();
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onMove(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    player.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    player.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+  }
+
+  function tick() { timeLeft--; if (timeLeft <= 0) { clearInterval(timerInterval); endGame(); } }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); foods = []; monsters = []; score = 0; level = 1; timeLeft = 30; monsterSpeed = 0.6; isPlaying = true;
+    player.x = canvas.width / 2; player.y = canvas.height / 2;
+    for (let i = 0; i < 5; i++) spawnFood(); spawnMonster();
+    hud.setScore(0); hud.setLevel(1); timerInterval = setInterval(tick, 1000); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId); clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerdown', onMove);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

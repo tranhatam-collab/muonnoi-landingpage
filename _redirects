@@ -1,0 +1,9 @@
+# Subdomain routing cho plays.muonnoi.org -> thư mục /plays
+# (Cloudflare Pages đọc file này ở thư mục output gốc; rule khớp THEO THỨ TỰ, dòng trên thắng)
+#
+# QUAN TRỌNG: phải loại trừ /functions và /api TRƯỚC catch-all,
+# nếu không subdomain sẽ nuốt cả đường dẫn API -> hỏng lưu tiến trình & điểm.
+https://plays.muonnoi.org/functions/*  /functions/:splat  200
+https://plays.muonnoi.org/api/*         /api/:splat         200
+https://plays.muonnoi.org/              /plays/index.html   200
+https://plays.muonnoi.org/*             /plays/:splat       200

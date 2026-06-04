@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Muon Noi Brand System Preview</title>
+<link rel="stylesheet" href="../tokens/brand-tokens.css">
+<link rel="stylesheet" href="../tokens/components.css">
+<style>
+body { margin: 0; padding: 32px; background: #F5F1E8; }
+.wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 32px; }
+.section { background: var(--mn-bg); border: 1px solid var(--mn-border); border-radius: 16px; padding: 24px; }
+.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.logo { max-width: 420px; height: auto; }
+.muted { color: #6B7280; }
+.grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="section">
+    <div class="row">
+      <img class="logo" src="../assets/logo/master/muonnoi-logo-horizontal-light.svg" alt="Muôn Nơi">
+      <div>
+        <h1>Muôn Nơi</h1>
+        <p class="muted">Hạ tầng số cho đời sống thật</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Buttons</h2>
+    <div class="row">
+      <a class="mn-btn mn-btn-primary" href="#">Khám phá</a>
+      <a class="mn-btn mn-btn-secondary" href="#">Xem thêm</a>
+      <a class="mn-link" href="#">Text link</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Cards</h2>
+    <div class="grid">
+      <div class="mn-card">
+        <div class="mn-status mn-badge-live">✓ Đã live</div>
+        <h4>Standard Card</h4>
+        <p>Muôn Nơi card system for public and product contexts.</p>
+      </div>
+      <div class="mn-card mn-story-card">
+        <div class="mn-story-image"></div>
+        <div class="mn-story-title">Câu chuyện từ nhiều nơi</div>
+        <div>Trích đoạn ngắn từ cộng đồng người Việt ở nhiều nơi.</div>
+        <div class="mn-story-meta">Nguyễn A · Tokyo · 5 min read</div>
+      </div>
+      <div class="mn-card mn-profile-card">
+        <div class="mn-avatar"></div>
+        <div class="mn-story-title">Nguyễn Mentor</div>
+        <div class="muted">Community Guide · Sydney</div>
+        <p>Profile card template for mentorship and community roles.</p>
+        <a class="mn-btn mn-btn-secondary" href="#">Request Match</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Sub-brand</h2>
+    <div class="row">
+      <img class="logo" src="../assets/logo/nguoiviet/nguoiviet-logo-horizontal-light.svg" alt="Người Việt Muôn Nơi">
+    </div>
+  </div>
+</div>
+</body>
+</html>

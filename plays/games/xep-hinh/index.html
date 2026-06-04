@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Xếp các mảnh hình vào khung.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xep Hinh — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #puzzle-grid { display: grid; gap: 3px; margin: 1rem auto; max-width: 320px; touch-action: none; }
+  .puz-cell { aspect-ratio: 1; border-radius: 6px; background: #1f2937; border: 1px solid #374151; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; color: #e5e7eb; cursor: pointer; transition: transform 0.1s; }
+  .puz-cell:active { transform: scale(0.95); }
+  .puz-cell.empty { background: #111827; border: 1px dashed #374151; cursor: default; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="xep-hinh">
+
+<div id="hud-root"></div>
+<div id="puzzle-grid"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Xep Hinh</h1>
+    <p>Sắp xếp các số theo thứ tự từ 1 đến N. Cang nhanh càng nhiều diem!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'xep-hinh';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Xếp Hình', desc: 'Một ô trống sẽ bị trống. Nhấn các ô gần ô trống để đổi chỗ. Sắp xếp các số từ 1 đến N theo thứ tự.' },
+      { title: 'Kích thước tăng', desc: 'Sang màn mới, bảng sẽ lớn hơn (3x3 → 4x4 → 5x5). Càng lớn càng khó!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Xếp càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Shape Builder', desc: 'One empty cell. Tap adjacent cells to slide. Arrange numbers 1 to N in order.' },
+      { title: 'Grid Grows', desc: 'New levels use bigger grids (3x3 → 4x4 → 5x5). Larger = harder!' },
+      { title: 'Endless', desc: 'No limit. Solve as many as you can!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('puzzle-grid');
+
+  let grid = [], size = 3, emptyIdx = 0, score = 0, level = 1, isPlaying = false;
+
+  function genGrid() {
+    grid = Array.from({ length: size * size }, (_, i) => i + 1);
+    grid[size * size - 1] = 0; // empty
+    emptyIdx = size * size - 1;
+    // Shuffle
+    for (let i = 0; i < size * size * 3; i++) {
+      const moves = getValidMoves(emptyIdx);
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      [grid[emptyIdx], grid[move]] = [grid[move], grid[emptyIdx]];
+      emptyIdx = move;
+    }
+  }
+
+  function getValidMoves(idx) {
+    const r = Math.floor(idx / size), c = idx % size;
+    const moves = [];
+    if (r > 0) moves.push(idx - size);
+    if (r < size - 1) moves.push(idx + size);
+    if (c > 0) moves.push(idx - 1);
+    if (c < size - 1) moves.push(idx + 1);
+    return moves;
+  }
+
+  function build() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    for (let i = 0; i < grid.length; i++) {
+      const cell = document.createElement('div');
+      cell.className = grid[i] === 0 ? 'puz-cell empty' : 'puz-cell';
+      cell.textContent = grid[i] === 0 ? '' : grid[i];
+      cell.dataset.idx = i;
+      cell.addEventListener('pointerdown', () => onTap(i));
+      board.appendChild(cell);
+    }
+  }
+
+  function onTap(idx) {
+    if (!isPlaying) return;
+    const moves = getValidMoves(emptyIdx);
+    if (!moves.includes(idx)) return;
+    [grid[emptyIdx], grid[idx]] = [grid[idx], grid[emptyIdx]];
+    emptyIdx = idx; build(); score += 5;
+    if (isSolved()) {
+      score += level * 50;
+      hud.setScore(score); level++;
+      if (size < 5) size++;
+      genGrid(); build(); hud.setLevel(level);
+    } else { hud.setScore(score); }
+  }
+
+  function isSolved() {
+    for (let i = 0; i < grid.length - 1; i++) if (grid[i] !== i + 1) return false;
+    return grid[grid.length - 1] === 0;
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    size = 3; score = 0; level = 1; isPlaying = true;
+    genGrid(); build(); hud.setScore(0); hud.setLevel(1);
+  }
+
+  function endGame() {
+    isPlaying = false;
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

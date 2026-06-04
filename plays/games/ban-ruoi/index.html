@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Bắn các con ruồi bay ngẫu nhiên trên màn hình.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bắn Ruồi</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; height:400px; background:#1e293b; border-radius:0.5rem; position:relative; overflow:hidden; margin-bottom:1rem; cursor:crosshair; }
+  .fly { position:absolute; width:28px; height:28px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; user-select:none; transition:transform 0.1s; }
+  .fly::after { content:'🪰'; }
+  .fly.hit { transform:scale(1.4); opacity:0; transition:all 0.2s; }
+  .lives { position:absolute; top:8px; left:8px; display:flex; gap:4px; }
+  .life { width:12px; height:12px; background:#22c55e; border-radius:50%; }
+  .life.lost { background:#ef4444; }
+</style>
+</head>
+<body data-game="ban-ruoi">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="lives" id="lives"></div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Bắn Ruồi</h1>
+    <p>Ruồi sẽ bay ngẫu nhiên. Chạm để bắn. Để ruồi bay thoát quá 3 lần là thua!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'ban-ruoi';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Bắn Ruồi', desc: 'Ruồi xuất hiện ngẫu nhiên và bay xung quanh. Chạm để bắn.' },
+      { title: 'Nhanh lên', desc: 'Ruồi sẽ tự biến mất sau vài giây. Bắn trước khi chúng bay thoát!' },
+      { title: '3 mạng', desc: 'Để ruồi bay thoát 3 lần là trò chơi kết thúc.' },
+    ],
+    en: [
+      { title: 'Fly Swatter', desc: 'Flies appear randomly and buzz around. Tap to swat them.' },
+      { title: 'Hurry', desc: 'Flies disappear after a few seconds. Swat before they escape!' },
+      { title: '3 Lives', desc: 'Let 3 flies escape and the game is over.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const root = document.getElementById('game-root');
+  const livesEl = document.getElementById('lives');
+
+  let score = 0, level = 1, isPlaying = false, lives = 3, flies = [], spawnTimer = null, animTimer = null;
+
+  function updateLives() {
+    livesEl.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const d = document.createElement('div');
+      d.className = 'life' + (i >= lives ? ' lost' : '');
+      livesEl.appendChild(d);
+    }
+  }
+
+  function spawnFly() {
+    if (!isPlaying) return;
+    const fly = document.createElement('div');
+    fly.className = 'fly';
+    const x = Math.random() * (root.clientWidth - 28);
+    const y = Math.random() * (root.clientHeight - 28);
+    fly.style.left = x + 'px';
+    fly.style.top = y + 'px';
+    root.appendChild(fly);
+
+    let vx = (Math.random() - 0.5) * (2 + level * 0.5);
+    let vy = (Math.random() - 0.5) * (2 + level * 0.5);
+    let alive = true;
+    const maxLife = Math.max(2000, 4000 - level * 150);
+    let life = maxLife;
+
+    function move() {
+      if (!alive || !isPlaying) return;
+      life -= 16;
+      const cx = parseFloat(fly.style.left) + vx;
+      const cy = parseFloat(fly.style.top) + vy;
+      if (cx <= 0 || cx >= root.clientWidth - 28) vx *= -1;
+      if (cy <= 0 || cy >= root.clientHeight - 28) vy *= -1;
+      fly.style.left = Math.max(0, Math.min(root.clientWidth - 28, cx)) + 'px';
+      fly.style.top = Math.max(0, Math.min(root.clientHeight - 28, cy)) + 'px';
+      if (life <= 0) {
+        alive = false;
+        fly.remove();
+        flies = flies.filter(f => f !== fly);
+        lives--;
+        updateLives();
+        if (lives <= 0) endGame();
+      } else {
+        requestAnimationFrame(move);
+      }
+    }
+    requestAnimationFrame(move);
+
+    fly.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!alive || !isPlaying) return;
+      alive = false;
+      fly.classList.add('hit');
+      setTimeout(() => fly.remove(), 200);
+      flies = flies.filter(f => f !== fly);
+      score += 10 + level * 2;
+      hud.setScore(score);
+      if (score >= level * 50) {
+        level++;
+        hud.setLevel(level);
+      }
+    });
+
+    flies.push(fly);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; lives = 3; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    updateLives();
+    spawnFly();
+    spawnTimer = setInterval(() => {
+      if (!isPlaying) return;
+      const count = Math.min(1 + Math.floor(level / 2), 4);
+      for (let i = 0; i < count; i++) spawnFly();
+    }, 2000 - Math.min(level * 100, 1200));
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(spawnTimer);
+    flies.forEach(f => f.remove());
+    flies = [];
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

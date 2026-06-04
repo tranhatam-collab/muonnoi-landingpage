@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Vẽ & tô màu tự do trên canvas. Lưu bức vẽ để nhận điểm!"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Tô Màu Thần Kỳ · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+  <style>
+    canvas{border:2px solid var(--line);border-radius:12px;display:block;margin:12px auto;background:#fff;cursor:crosshair;touch-action:none}
+    .tools{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+    .tools button{width:36px;height:36px;border-radius:50%;border:3px solid transparent}
+    .tools button.active{border-color:var(--text)}
+    .tools .size{display:flex;align-items:center;gap:8px}
+    .actions{display:flex;gap:10px;justify-content:center;margin:8px 0}
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Tô Màu Thần Kỳ</b></div>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="k">Bức vẽ</div><div class="v" id="hDone">0</div></div>
+      <div class="stat"><div class="k">Điểm</div><div class="v" id="hScore">0</div></div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="overlay" id="overlay">
+        <h2>Tô Màu Thần Kỳ</h2>
+        <p class="small">Vẽ & tô màu tự do. Lưu bức vẽ để nhận điểm!</p>
+        <button class="btn" id="startBtn">Bắt đầu</button>
+      </div>
+      <div id="gameArea" style="display:none">
+        <div class="tools">
+          <button class="color" style="background:#ef4444" data-c="#ef4444"></button>
+          <button class="color" style="background:#f59e0b" data-c="#f59e0b"></button>
+          <button class="color" style="background:#22c55e" data-c="#22c55e"></button>
+          <button class="color" style="background:#3b82f6" data-c="#3b82f6"></button>
+          <button class="color" style="background:#8b5cf6" data-c="#8b5cf6"></button>
+          <button class="color" style="background:#000" data-c="#000"></button>
+          <button class="color active" style="background:#fff;border:2px solid var(--line)" data-c="#fff"></button>
+          <div class="size"><label>Size</label><input type="range" id="size" min="2" max="30" value="8"></div>
+        </div>
+        <canvas id="cv" width="340" height="340"></canvas>
+        <div class="actions">
+          <button class="btn secondary" id="clearBtn">🗑️ Xóa</button>
+          <button class="btn" id="saveBtn">💾 Lưu & điểm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+    let score=0,done=0,color='#fff',size=8;
+    const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+    let drawing=false;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+
+    function getPos(e){const r=cv.getBoundingClientRect();const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;return{x,y};}
+    function start(e){drawing=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);}
+    function move(e){if(!drawing)return;e.preventDefault();const p=getPos(e);ctx.strokeStyle=color;ctx.lineWidth=size;ctx.lineTo(p.x,p.y);ctx.stroke();}
+    function end(){drawing=false;}
+
+    cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); cv.addEventListener('mouseup',end); cv.addEventListener('mouseleave',end);
+    cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
+
+    document.querySelectorAll('.color').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.color').forEach(x=>x.classList.remove('active'));b.classList.add('active');color=b.dataset.c;};});
+    document.getElementById('size').oninput=(e)=>{size=parseInt(e.target.value);};
+    document.getElementById('clearBtn').onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);};
+    document.getElementById('saveBtn').onclick=()=>{done++;score+=50;document.getElementById('hDone').textContent=done;document.getElementById('hScore').textContent=score;MNPlays.saveProgress('to-mau-than-ky',{score,done});alert('Đã lưu! +' + 50 + ' điểm');};
+    document.getElementById('startBtn').onclick=()=>{document.getElementById('overlay').style.display='none';document.getElementById('gameArea').style.display='';};
+    (async()=>{const p=await MNPlays.loadProgress('to-mau-than-ky');if(p){score=p.score||0;done=p.done||0;document.getElementById('hScore').textContent=score;document.getElementById('hDone').textContent=done;}})();
+  </script>
+</body>
+</html>

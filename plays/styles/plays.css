@@ -1,0 +1,201 @@
+/* plays.css — Muon Nơi Game Platform Styles */
+/* No external dependencies, self-contained */
+
+:root {
+  --bg: #0b0f19;
+  --surface: #111827;
+  --surface-2: #1f2937;
+  --border: #374151;
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #f59e0b;
+  --accent-2: #10b981;
+  --danger: #ef4444;
+  --font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --radius: 8px;
+  --tap: 44px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 16px;
+  line-height: 1.5; min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Buttons */
+.plays-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-family: inherit; font-size: 1rem; font-weight: 500;
+  cursor: pointer;
+  min-height: var(--tap);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.plays-btn-primary {
+  background: var(--accent); color: #000;
+}
+.plays-btn-primary:hover, .plays-btn-primary:active {
+  background: #d97706;
+}
+.plays-btn-ghost {
+  background: transparent; color: var(--text);
+  border-color: var(--border);
+}
+.plays-btn-ghost:hover, .plays-btn-ghost:active {
+  background: var(--surface-2);
+}
+.plays-btn:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+.plays-btn:active { transform: scale(0.97); }
+
+/* HUD */
+.plays-hud {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+}
+.plays-hud-left, .plays-hud-right { display: flex; align-items: center; gap: 0.75rem; }
+.plays-hud-score, .plays-hud-level {
+  font-size: 0.9rem; font-weight: 600; color: var(--accent);
+}
+.plays-hud-btn {
+  width: 36px; height: 36px;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1rem;
+}
+
+/* Game Over Overlay */
+.plays-gameover-overlay {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.88);
+  z-index: 60;
+}
+.plays-gameover-box {
+  text-align: center; padding: 2rem;
+  background: var(--surface); border-radius: 12px;
+  border: 1px solid var(--border); max-width: 340px; width: 90%;
+}
+.plays-gameover-title { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent); }
+.plays-gameover-score-row, .plays-gameover-best-row {
+  display: flex; justify-content: space-between;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+}
+.plays-gameover-score-value, .plays-gameover-best-value {
+  font-weight: 700; color: var(--text);
+}
+.plays-gameover-best-value { color: var(--accent-2); }
+.plays-gameover-level { margin: 0.5rem 0; color: var(--text-muted); }
+.plays-gameover-hint { font-size: 0.85rem; color: var(--text-muted); margin: 0.75rem 0; }
+.plays-gameover-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+
+/* Tutorial Overlay */
+.plays-tutorial-overlay {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.9);
+  z-index: 55;
+}
+.plays-tutorial-box {
+  position: relative;
+  padding: 1.5rem;
+  background: var(--surface); border-radius: 12px;
+  border: 1px solid var(--border);
+  max-width: 360px; width: 90%;
+  text-align: center;
+}
+.plays-tutorial-step {
+  font-size: 0.8rem; color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.plays-tutorial-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.plays-tutorial-desc { color: var(--text-muted); margin-bottom: 1rem; }
+.plays-tutorial-img { max-width: 100%; border-radius: var(--radius); margin-bottom: 1rem; }
+.plays-tutorial-nav { display: flex; gap: 0.5rem; justify-content: center; }
+.plays-tutorial-close {
+  position: absolute; top: 0.5rem; right: 0.75rem;
+  background: none; border: none; color: var(--text-muted);
+  font-size: 1.5rem; cursor: pointer;
+}
+
+/* Hub / Catalog */
+.plays-hub { max-width: 960px; margin: 0 auto; padding: 1rem; }
+.plays-hub-header {
+  text-align: center; padding: 2rem 1rem;
+}
+.plays-hub-title { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+.plays-hub-subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
+.plays-hub-stats {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+}
+.plays-hub-stat {
+  background: var(--surface); padding: 0.5rem 1rem;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.plays-hub-stat span { color: var(--accent); font-weight: 700; }
+
+.plays-catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.plays-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  text-decoration: none; color: inherit;
+  display: block;
+}
+.plays-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.plays-card.live { border-color: var(--accent-2); }
+.plays-card .plays-card-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.plays-card .plays-card-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+.plays-card .plays-card-desc { font-size: 0.75rem; color: var(--text-muted); }
+.plays-card .plays-card-badge {
+  display: inline-block; margin-top: 0.5rem;
+  padding: 0.15rem 0.4rem; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 600;
+  background: var(--surface-2); color: var(--text-muted);
+}
+.plays-card.live .plays-card-badge { background: var(--accent-2); color: #000; }
+
+/* Lang switcher */
+.plays-lang {
+  position: fixed; top: 0.5rem; right: 0.5rem;
+  display: flex; gap: 0.25rem; z-index: 30;
+}
+.plays-lang-btn {
+  padding: 0.25rem 0.6rem;
+  background: var(--surface-2); color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 0.8rem; cursor: pointer;
+}
+.plays-lang-btn.active { color: var(--accent); border-color: var(--accent); }
+
+/* Utility */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 400px) {
+  .plays-catalog { grid-template-columns: repeat(2, 1fr); }
+  .plays-hub-title { font-size: 1.5rem; }
+}

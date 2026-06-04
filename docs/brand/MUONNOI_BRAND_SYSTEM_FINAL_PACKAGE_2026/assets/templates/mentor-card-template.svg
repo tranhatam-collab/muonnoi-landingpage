@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="520" viewBox="0 0 640 520" fill="none">
+<rect width="640" height="520" fill="#FFFFFF"/>
+<rect x="28" y="24" width="584" height="472" rx="16" fill="#FFFFFF" stroke="#E5E7EB"/>
+<circle cx="320" cy="132" r="64" fill="#F3F4F6" stroke="#D4AF37" stroke-width="3"/>
+<text x="252" y="244" font-family="Inter, Roboto, Arial, sans-serif" font-size="28" font-weight="700" fill="#0A0F14">Nguyễn Mentor</text>
+<text x="250" y="280" font-family="Inter, Roboto, Arial, sans-serif" font-size="16" fill="#6B7280">Community Guide · Sydney</text>
+<text x="120" y="338" font-family="Inter, Roboto, Arial, sans-serif" font-size="15" text-anchor="middle" fill="#0A0F14" opacity="0.82"></text>
+<text x="320" y="338" font-family="Inter, Roboto, Arial, sans-serif" font-size="15" text-anchor="middle" fill="#0A0F14" opacity="0.82">Hồ sơ mentor / bạn trẻ với tín hiệu tin cậy</text>
+<rect x="220" y="388" width="200" height="48" rx="4" fill="#D4AF37"/>
+<text x="277" y="418" font-family="Inter, Roboto, Arial, sans-serif" font-size="16" font-weight="700" fill="#0A0F14">Request Match</text>
+</svg>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Làm ngược lại với phản xạ tự nhiên.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phan Xa Nguoc — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #reverse-board { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin: 1rem auto; max-width: 360px; }
+  .reverse-cell { width: 100px; height: 100px; border-radius: 12px; background: #1f2937; border: 1px solid #374151; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; cursor: pointer; transition: transform 0.15s, background 0.15s; user-select: none; }
+  .reverse-cell:active { transform: scale(0.95); }
+  .reverse-cell.red { background: #ef4444; color: #fff; }
+  .reverse-cell.blue { background: #3b82f6; color: #fff; }
+  .reverse-cell.green { background: #10b981; color: #fff; }
+  .reverse-cell.yellow { background: #f59e0b; color: #000; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  #reverse-hint { text-align: center; font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; min-height: 2rem; }
+</style>
+</head>
+<body data-game="phan-xa-nguoc">
+
+<div id="hud-root"></div>
+<div id="reverse-hint">Nhan nguoc mau!</div>
+<div id="reverse-board"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Phan Xa Nguoc</h1>
+    <p>Nhấn NGƯỢC LẠI với phản xạ tự nhiên. ĐỎ = XANH, XANH = ĐỎ!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'phan-xa-nguoc';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Phan Xa Nguoc', desc: 'Một nút sẽ sáng lên. Nếu ĐỎ thì bạn phải nhấn XANH. Nếu XANH thì nhấn ĐỎ. Làm ngược lại với bản năng!' },
+      { title: 'Tốc độ tăng', desc: 'Càng về sáu toc đỏ hien càng nhanh. Đừng để não tự động điều khiển tay bạn.' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Tap luyen phản xạ nguoc!' },
+    ],
+    en: [
+      { title: 'Reverse Reflex', desc: 'A button lights up. If RED, tap BLUE. If BLUE, tap RED. Override your instincts!' },
+      { title: 'Speed Up', desc: 'Later levels flash faster. Do not let your brain autopilot your finger.' },
+      { title: 'Endless', desc: 'No limit. Train your reverse reflex!' },
+    ],
+  };
+  const COLORS = [
+    { key: 'red', name: 'DO', en: 'RED', hex: '#ef4444' },
+    { key: 'blue', name: 'XANH', en: 'BLUE', hex: '#3b82f6' },
+    { key: 'green', name: 'XANH LA', en: 'GREEN', hex: '#10b981' },
+    { key: 'yellow', name: 'VANG', en: 'YELLOW', hex: '#f59e0b' },
+  ];
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('reverse-board');
+  const hintEl = document.getElementById('reverse-hint');
+
+  let activeIdx = 0, score = 0, level = 1, lives = 3, timeLeft = 0, isPlaying = false, timerInterval = null, showMs = 1500;
+
+  function build() {
+    board.innerHTML = '';
+    for (let i = 0; i < COLORS.length; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'reverse-cell';
+      cell.textContent = LANG === 'vi' ? COLORS[i].name : COLORS[i].en;
+      cell.addEventListener('pointerdown', () => onTap(i));
+      board.appendChild(cell);
+    }
+  }
+
+  function updateHint() {
+    const c = COLORS[activeIdx];
+    const target = COLORS[(activeIdx + 2) % COLORS.length];
+    hintEl.innerHTML = (LANG === 'vi' ? 'Neu <span style="color:' + c.hex + '">' + c.name + '</span> → nhấn <span style="color:' + target.hex + '">' + target.name + '</span>' : 'If <span style="color:' + c.hex + '">' + c.en + '</span> → tap <span style="color:' + target.hex + '">' + target.en + '</span>');
+  }
+
+  function flash() {
+    activeIdx = Math.floor(Math.random() * COLORS.length);
+    for (let i = 0; i < board.children.length; i++) board.children[i].className = 'reverse-cell' + (i === activeIdx ? ' ' + COLORS[i].key : '');
+    timeLeft = Math.max(8, showMs / 100);
+    clearInterval(timerInterval);
+    timerInterval = setInterval(tick, 100);
+  }
+
+  function tick() { timeLeft -= 1; if (timeLeft <= 0) { lives--; clearInterval(timerInterval); if (lives <= 0) endGame(); else flash(); } }
+
+  function onTap(idx) {
+    if (!isPlaying) return;
+    const targetIdx = (activeIdx + 2) % COLORS.length;
+    if (idx === targetIdx) {
+      score += Math.floor(timeLeft) * 10 + level * 5;
+      hud.setScore(score);
+      if (score % 80 === 0) { level++; showMs = Math.max(600, showMs * 0.92); hud.setLevel(level); }
+      clearInterval(timerInterval); flash();
+    } else { lives--; clearInterval(timerInterval); if (lives <= 0) endGame(); else flash(); }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    build(); score = 0; level = 1; lives = 3; showMs = 1500; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); flash();
+  }
+
+  function endGame() {
+    isPlaying = false; clearInterval(timerInterval);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Sắp xếp các số theo thứ tự tăng dần càng nhanh càng tốt.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sắp Xếp Số</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .num-grid { display:grid; gap:0.5rem; margin-bottom:1rem; }
+  .num-cell { width:60px; height:60px; background:#334155; border-radius:0.375rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold; cursor:pointer; user-select:none; transition:background 0.2s; }
+  .num-cell.selected { background:#3b82f6; }
+  .num-cell.correct { background:#22c55e; }
+  #timer-bar { width:100%; height:6px; background:#334155; border-radius:3px; margin-bottom:0.5rem; overflow:hidden; }
+  #timer-fill { height:100%; background:#22c55e; width:100%; transition:width 0.1s linear; }
+</style>
+</head>
+<body data-game="sap-xep-so">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div id="timer-bar"><div id="timer-fill"></div></div>
+  <div class="num-grid" id="num-grid"></div>
+  <div id="level-info" style="color:#94a3b8;font-size:0.875rem;">Level 1</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Sắp Xếp Số</h1>
+    <p>Chọn 2 ô để hoán đổi. Sắp xếp các số theo thứ tự tăng dần!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'sap-xep-so';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Sắp Xếp Số', desc: 'Các số xuất hiện ngẫu nhiên. Chọn 2 ô để hoán đổi vị trí.' },
+      { title: 'Mục tiêu', desc: 'Sắp xếp các số theo thứ tự tăng dần từ trái sang phải, trên xuống dưới.' },
+      { title: 'Thời gian', desc: 'Mỗi level có giới hạn thời gian. Càng nhanh càng nhiều điểm!' },
+    ],
+    en: [
+      { title: 'Number Sort', desc: 'Numbers appear randomly. Select 2 cells to swap them.' },
+      { title: 'Goal', desc: 'Arrange numbers in ascending order left-to-right, top-to-bottom.' },
+      { title: 'Time', desc: 'Each level has a time limit. Faster = more points!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('num-grid');
+  const timerFill = document.getElementById('timer-fill');
+  const levelInfo = document.getElementById('level-info');
+
+  let score = 0, level = 1, isPlaying = false, timeLeft = 0, maxTime = 0, timerId = null, selectedIdx = null;
+  let nums = [];
+
+  function getGridConfig(lv) {
+    if (lv === 1) return { cols: 3, count: 3, time: 15 };
+    if (lv === 2) return { cols: 2, count: 4, time: 20 };
+    if (lv <= 4) return { cols: 3, count: 6, time: 30 };
+    if (lv <= 7) return { cols: 4, count: 8, time: 40 };
+    return { cols: 5, count: 10, time: 50 };
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function isSorted() {
+    for (let i = 1; i < nums.length; i++) if (nums[i] < nums[i - 1]) return false;
+    return true;
+  }
+
+  function startLevel() {
+    const cfg = getGridConfig(level);
+    maxTime = cfg.time; timeLeft = cfg.time;
+    nums = Array.from({ length: cfg.count }, (_, i) => i + 1);
+    shuffle(nums);
+    // Ensure not already sorted
+    while (isSorted()) shuffle(nums);
+    selectedIdx = null;
+    renderGrid(cfg.cols);
+    hud.setLevel(level);
+    timerFill.style.width = '100%';
+    timerFill.style.background = '#22c55e';
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (!isPlaying) return;
+      timeLeft -= 0.1;
+      const pct = Math.max(0, timeLeft / maxTime * 100);
+      timerFill.style.width = pct + '%';
+      if (pct < 30) timerFill.style.background = '#ef4444';
+      else if (pct < 60) timerFill.style.background = '#eab308';
+      if (timeLeft <= 0) endGame();
+    }, 100);
+  }
+
+  function renderGrid(cols) {
+    gridEl.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+    gridEl.innerHTML = '';
+    nums.forEach((n, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'num-cell' + (i === selectedIdx ? ' selected' : '');
+      cell.textContent = n;
+      cell.addEventListener('click', () => onCellClick(i));
+      gridEl.appendChild(cell);
+    });
+    levelInfo.textContent = (LANG === 'vi' ? 'Level ' : 'Level ') + level;
+  }
+
+  function onCellClick(i) {
+    if (!isPlaying) return;
+    if (selectedIdx === null) {
+      selectedIdx = i;
+      renderGrid(getGridConfig(level).cols);
+      return;
+    }
+    if (selectedIdx === i) { selectedIdx = null; renderGrid(getGridConfig(level).cols); return; }
+    // Swap
+    [nums[selectedIdx], nums[i]] = [nums[i], nums[selectedIdx]];
+    selectedIdx = null;
+    renderGrid(getGridConfig(level).cols);
+    if (isSorted()) {
+      score += Math.floor(timeLeft * 10 + level * 5);
+      hud.setScore(score);
+      level++;
+      setTimeout(startLevel, 400);
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    startLevel();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(timerId);
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

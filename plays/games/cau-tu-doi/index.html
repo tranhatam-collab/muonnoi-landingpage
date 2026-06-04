@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Nối từ tiếng Việt với nghĩa tiếng Anh đúng. Streak càng cao, điểm càng nhiều!"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Cầu Từ Đôi · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+  <style>
+    .bridge{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin:20px 0}
+    .bridge .word{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:16px 24px;font-size:18px;font-weight:600;min-width:100px;text-align:center}
+    .bridge .word.matched{border-color:var(--ok);color:var(--ok)}
+    .bridge .link{font-size:24px;color:var(--muted)}
+    .choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+    .choices button{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer}
+    .choices button:hover{border-color:var(--brand)}
+    .choices button.correct{border-color:var(--ok);background:rgba(34,197,94,.12)}
+    .choices button.wrong{border-color:var(--err);background:rgba(239,68,68,.12)}
+    .streak{color:var(--warn);font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Cầu Từ Đôi</b></div>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="k">Mức</div><div class="v" id="hLevel">1</div></div>
+      <div class="stat"><div class="k">Điểm</div><div class="v" id="hScore">0</div></div>
+      <div class="stat"><div class="k">Streak</div><div class="v streak" id="hStreak">0</div></div>
+    </div>
+    <div class="stage" id="stage">
+      <div id="gameArea" style="display:none">
+        <div class="bridge">
+          <div class="word" id="wVn">—</div>
+          <span class="link">→</span>
+          <div class="word" id="wEn">?</div>
+        </div>
+        <div class="choices" id="choices"></div>
+      </div>
+      <div class="overlay" id="overlay">
+        <h2>Cầu Từ Đôi</h2>
+        <p class="small">Nối từ tiếng Việt với nghĩa tiếng Anh đúng. Streak càng cao, điểm càng nhiều!</p>
+        <button class="btn" id="startBtn">Bắt đầu</button>
+        <div class="note" id="ovBest"></div>
+      </div>
+    </div>
+  </div>
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+    const WORDS = [
+      {vn:'Mèo',en:'Cat'},{vn:'Chó',en:'Dog'},{vn:'Nhà',en:'House'},{vn:'Nước',en:'Water'},
+      {vn:'Lửa',en:'Fire'},{vn:'Gió',en:'Wind'},{vn:'Trời',en:'Sky'},{vn:'Đất',en:'Earth'},
+      {vn:'Mặt trời',en:'Sun'},{vn:'Mặt trăng',en:'Moon'},{vn:'Sao',en:'Star'},{vn:'Cây',en:'Tree'},
+      {vn:'Hoa',en:'Flower'},{vn:'Quả',en:'Fruit'},{vn:'Lá',en:'Leaf'},{vn:'Rễ',en:'Root'},
+      {vn:'Sông',en:'River'},{vn:'Núi',en:'Mountain'},{vn:'Biển',en:'Sea'},{vn:'Rừng',en:'Forest'},
+      {vn:'Bạn',en:'Friend'},{vn:'Gia đình',en:'Family'},{vn:'Tình yêu',en:'Love'},{vn:'Hạnh phúc',en:'Happiness'},
+      {vn:'Sách',en:'Book'},{vn:'Bút',en:'Pen'},{vn:'Bàn',en:'Table'},{vn:'Ghế',en:'Chair'},
+      {vn:'Cửa',en:'Door'},{vn:'Cửa sổ',en:'Window'}
+    ];
+    let level=1,score=0,streak=0,current=null,lives=3;
+    const hLevel=document.getElementById('hLevel'),hScore=document.getElementById('hScore'),hStreak=document.getElementById('hStreak');
+    const wVn=document.getElementById('wVn'),wEn=document.getElementById('wEn'),choicesEl=document.getElementById('choices');
+
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+    function pickWord(){return WORDS[Math.floor(Math.random()*WORDS.length)];}
+    function makeRound(){
+      current = pickWord();
+      const distractors = shuffle(WORDS.filter(w=>w.en!==current.en)).slice(0,3).map(w=>w.en);
+      const opts = shuffle([current.en,...distractors]);
+      wVn.textContent = current.vn; wEn.textContent = '?'; wEn.className='word';
+      choicesEl.innerHTML = opts.map(o=>`<button data-ans="${o}">${o}</button>`).join('');
+      choicesEl.querySelectorAll('button').forEach(b=>{
+        b.onclick = ()=>check(b);
+      });
+    }
+    function check(btn){
+      const ans = btn.dataset.ans;
+      const correct = ans === current.en;
+      if(correct){
+        btn.classList.add('correct'); wEn.textContent=current.en; wEn.classList.add('matched');
+        streak++; score += 10*streak;
+      }else{
+        btn.classList.add('wrong'); streak=0; lives--;
+        const right = choicesEl.querySelector(`[data-ans="${current.en}"]`); if(right) right.classList.add('correct');
+        if(lives<=0){endGame();return;}
+      }
+      hScore.textContent=score; hStreak.textContent=streak;
+      if(score>=level*50){level++; hLevel.textContent=level;}
+      choicesEl.querySelectorAll('button').forEach(b=>b.disabled=true);
+      setTimeout(makeRound, correct?800:1500);
+      MNPlays.saveProgress('cau-tu-doi',{level,score});
+    }
+    function endGame(){
+      MNPlays.saveProgress('cau-tu-doi',{level,score});
+      MNPlays.showGameOver('cau-tu-doi',score,{level},()=>{location.reload();});
+    }
+    document.getElementById('startBtn').onclick = ()=>{
+      document.getElementById('overlay').style.display='none';
+      document.getElementById('gameArea').style.display='';
+      lives=3; score=0; level=1; streak=0;
+      makeRound();
+    };
+    (async()=>{
+      const p=await MNPlays.loadProgress('cau-tu-doi');
+      if(p){level=p.level||1;score=p.score||0;hLevel.textContent=level;hScore.textContent=score;}
+      document.getElementById('ovBest').textContent = p?`Kỷ lục: Mức ${p.level||1} · ${p.score||0}đ`:'';
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Di chuyển né các quả bom rơi từ trên xuống. Càng lâu càng nhiều bom.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tránh Bom</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; height:400px; background:#1e293b; border-radius:0.5rem; position:relative; overflow:hidden; margin-bottom:1rem; }
+  canvas { display:block; width:100%; height:100%; }
+</style>
+</head>
+<body data-game="tranh-bom">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <canvas id="game-canvas" width="320" height="400"></canvas>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tránh Bom</h1>
+    <p>Di chuyển né các quả bom rơi từ trên. Càng lâu càng nhiều điểm!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'tranh-bom';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tránh Bom', desc: 'Bom rơi từ trên xuống. Dùng chuột hoặc chạm màn hình để di chuyển.' },
+      { title: 'Sống sót', desc: 'Càng sống sót lâu, bom rơi càng nhanh và càng nhiều.' },
+      { title: 'Điểm', desc: 'Mỗi giây sống sót đều có điểm. Va chạm bom là thua!' },
+    ],
+    en: [
+      { title: 'Dodge Bomb', desc: 'Bombs fall from above. Use mouse or touch to move your shield.' },
+      { title: 'Survive', desc: 'The longer you survive, the faster and denser the bombs fall.' },
+      { title: 'Score', desc: 'Every second survived gives points. Collision = game over!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let score = 0, level = 1, isPlaying = false;
+  let player = { x: 160, y: 360, w: 40, h: 10 };
+  let bombs = [], spawnTimer = null, scoreTimer = null;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Player
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(player.x - player.w/2, player.y, player.w, player.h);
+    // Bombs
+    bombs.forEach(b => {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#7f1d1d';
+      ctx.lineWidth = 2; ctx.stroke();
+    });
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    bombs.forEach(b => { b.y += b.vy; });
+    bombs = bombs.filter(b => b.y < canvas.height + 20);
+    // Collision
+    for (const b of bombs) {
+      if (b.x > player.x - player.w/2 - b.r && b.x < player.x + player.w/2 + b.r &&
+          b.y + b.r > player.y && b.y - b.r < player.y + player.h) {
+        endGame(); return;
+      }
+    }
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function spawnBomb() {
+    if (!isPlaying) return;
+    const count = Math.min(1 + Math.floor(level / 2), 5);
+    for (let i = 0; i < count; i++) {
+      bombs.push({
+        x: 10 + Math.random() * (canvas.width - 20),
+        y: -10,
+        r: 6 + Math.random() * 4,
+        vy: 1 + level * 0.3 + Math.random(),
+      });
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true; bombs = [];
+    hud.setScore(0); hud.setLevel(1);
+    player.x = canvas.width / 2;
+    update();
+    spawnTimer = setInterval(spawnBomb, Math.max(400, 1200 - level * 60));
+    scoreTimer = setInterval(() => {
+      if (!isPlaying) return;
+      score += level;
+      hud.setScore(score);
+      if (score > level * 50) {
+        level++;
+        hud.setLevel(level);
+        clearInterval(spawnTimer);
+        spawnTimer = setInterval(spawnBomb, Math.max(400, 1200 - level * 60));
+      }
+    }, 1000);
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearInterval(spawnTimer);
+    clearInterval(scoreTimer);
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  function movePlayer(cx) {
+    const rect = canvas.getBoundingClientRect();
+    player.x = (cx - rect.left) * (canvas.width / rect.width);
+    player.x = Math.max(player.w/2, Math.min(canvas.width - player.w/2, player.x));
+  }
+
+  canvas.addEventListener('pointermove', e => { if (isPlaying) movePlayer(e.clientX); });
+  canvas.addEventListener('pointerdown', e => { if (isPlaying) movePlayer(e.clientX); });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

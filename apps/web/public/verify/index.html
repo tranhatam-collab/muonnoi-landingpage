@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0f14" />
+  <meta name="robots" content="index,follow" />
+  <title>Xác Minh | Muôn Nơi</title>
+  <meta name="description" content="Hệ thống xác minh của Muôn Nơi giúp giảm bot, tăng tín hiệu tin cậy và làm rõ trọng lượng phát biểu trong cộng đồng." />
+  <link rel="canonical" href="https://www.muonnoi.org/verify/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Xác Minh | Muôn Nơi" />
+  <meta property="og:description" content="Verify không phải biểu tượng đẳng cấp. Đây là lớp tin cậy để cộng đồng phát triển bền vững." />
+  <meta property="og:url" content="https://www.muonnoi.org/verify/" />
+  <meta property="og:image" content="https://www.muonnoi.org/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/assets/ui.css?v=20260327" />
+</head>
+<body class="mn-body">
+  <a class="mn-srOnlyFocus" href="#main">Đi tới nội dung</a>
+
+  <div class="mn-bg" aria-hidden="true">
+    <div class="mn-bg__grid"></div>
+    <div class="mn-bg__glow mn-bg__glow--1"></div>
+    <div class="mn-bg__glow mn-bg__glow--2"></div>
+    <div class="mn-bg__noise"></div>
+  </div>
+
+  <header class="mn-topbar" role="banner">
+    <div class="mn-shell mn-topbar__inner">
+      <a class="mn-brand" href="/">
+        <span class="mn-brand__mark">MN</span>
+        <span class="mn-brand__text">
+          <span class="mn-brand__name">Muôn Nơi</span>
+          <span class="mn-brand__sub">Hạ tầng số cho đời sống thật</span>
+        </span>
+      </a>
+      <nav class="mn-mainNav" aria-label="Điều hướng chính">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+      </nav>
+      <div class="mn-topbar__actions">
+        <button class="mn-iconBtn" type="button" id="btnTheme" aria-label="Đổi giao diện"><span id="themeIcon">◐</span></button>
+        <button class="mn-langBtn" type="button" id="btnLang" aria-label="Đổi ngôn ngữ"><span id="langLabel">Tiếng Việt</span></button>
+        <a class="mn-btn mn-btn--primary" href="/feed/">Mở hệ</a>
+        <button class="mn-burger" id="mnBurger" type="button" aria-label="Mở menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mn-mobileMenu" id="mnMobileMenu" hidden>
+      <div class="mn-mobileMenu__links">
+        <a href="/" data-route="/">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/">Lộ trình</a>
+        <a href="/security/" data-route="/security/">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a href="/feed/" data-route="/feed/">Mở hệ</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="mn-page">
+    <div class="mn-shell">
+
+      <!-- HERO -->
+      <section class="mn-homeHero">
+        <div class="mn-homeHero__content">
+          <div class="mn-kicker">VERIFY · Trust Layer · Phase 2</div>
+          <h1 class="mn-h1">
+            Xác Minh Là<br />
+            Lớp Tin Cậy,<br />
+            Không Phải Đặc Quyền.
+          </h1>
+          <p class="mn-homeHero__desc">
+            Verify trong Muôn Nơi không phải để tạo đẳng cấp hay huy hiệu trang trí.
+            Mục tiêu duy nhất là giúp cộng đồng giảm bot, tăng tín hiệu thật và làm rõ
+            trọng lượng phát biểu của từng tài khoản.
+          </p>
+          <div class="mn-homeHero__actions">
+            <a class="mn-btn mn-btn--primary" href="/feed/">Vào Social Core</a>
+            <a class="mn-btn mn-btn--ghost" href="/security/">Xem bảo mật</a>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem lộ trình</a>
+          </div>
+          <div class="mn-homeHero__metaGrid">
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Nguyên tắc</div>
+              <div class="mn-statCard__value">
+                Verify phải đi cùng complaints và admin review để tạo thành trust layer hoàn chỉnh,
+                không phải tính năng độc lập.
+              </div>
+            </article>
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Thứ tự triển khai</div>
+              <div class="mn-statCard__value">
+                Phase 1: Social Core ổn định. Phase 2: Mở verify, complaints và governance
+                — đúng thứ tự, không đốt cháy giai đoạn.
+              </div>
+            </article>
+          </div>
+        </div>
+        <aside class="mn-homeHero__preview">
+          <div class="mn-previewWindow">
+            <div class="mn-previewWindow__top">
+              <div class="mn-previewWindow__dots"><span></span><span></span><span></span></div>
+              <div class="mn-previewWindow__title">Verify Layer Map</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">V1</span>
+                <div>
+                  <div class="mn-previewPost__name">Xác minh cơ bản</div>
+                  <div class="mn-previewPost__time">Phase 1 — đang chuẩn bị</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Xác thực email, chống bot, chống tạo tài khoản ảo hàng loạt.</div>
+              <div class="mn-previewPost__body">Lớp bảo vệ đầu tiên: đảm bảo mỗi tài khoản gắn với một con người thật.</div>
+              <div class="mn-previewPost__actions"><span>Email</span><span>Anti-bot</span><span>Rate-limit</span></div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">V2</span>
+                <div>
+                  <div class="mn-previewPost__name">Xác minh nâng cao</div>
+                  <div class="mn-previewPost__time">Phase 2 — theo nhu cầu mô-đun</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">Xác minh danh tính theo từng mô-đun yêu cầu (Nhà chung, Đầu tư...).</div>
+              <div class="mn-previewPost__body">Chỉ yêu cầu khi cần thiết — không thu thập dữ liệu dư thừa.</div>
+              <div class="mn-previewPost__actions"><span>Identity</span><span>Module-gated</span><span>Minimal data</span></div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- WHY VERIFY -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Tại sao Verify quan trọng?</h2>
+          <p class="mn-sectionDesc">
+            Không có lớp xác minh, mọi thứ trong social đều có thể bị giả mạo,
+            spam và thao túng. Verify là điều kiện để signal thật nổi trội hơn noise.
+          </p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Giảm nhiễu</div>
+            <div class="mn-infoCard__title">Loại bot, tài khoản giả và spam</div>
+            <div class="mn-infoCard__text">
+              Mỗi tài khoản verify tối thiểu phải gắn email thật. Các mức cao hơn dùng
+              multi-factor để loại tài khoản cố ý gây nhiễu.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Tăng tín hiệu</div>
+            <div class="mn-infoCard__title">Phát biểu có trọng lượng hơn</div>
+            <div class="mn-infoCard__text">
+              Tài khoản verified không được ưu tiên hiển thị, nhưng cộng đồng có thể
+              phân biệt rõ ai đang chịu trách nhiệm với phát biểu của mình.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Trust Layer</div>
+            <div class="mn-infoCard__title">Nền cho Complaints và Governance</div>
+            <div class="mn-infoCard__text">
+              Verify chỉ có ý nghĩa khi đi kèm complaints và admin review. Ba thành phần
+              này tạo thành trust layer hoàn chỉnh — thiếu một, hệ sẽ lệch.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- TWO TIERS -->
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Hai cấp xác minh</h2>
+          <p class="mn-sectionDesc">
+            Thiết kế tối giản — chỉ thu thập những gì thực sự cần, không gây friction không cần thiết.
+          </p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Cấp 1 — Cơ bản</div>
+            <div class="mn-infoCard__title">Email + Anti-bot</div>
+            <div class="mn-infoCard__text">
+              Xác thực email. Rate-limit tạo tài khoản. Chống tài khoản ảo hàng loạt.
+              Tất cả tài khoản mới đi qua bước này.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Cấp 2 — Nâng cao</div>
+            <div class="mn-infoCard__title">Danh tính theo mô-đun</div>
+            <div class="mn-infoCard__text">
+              Chỉ yêu cầu khi mô-đun cụ thể cần (Nhà chung, Đầu tư, Marketplace).
+              Không bắt buộc cho Social Core.
+            </div>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Nguyên tắc chung</div>
+            <div class="mn-infoCard__title">Dữ liệu tối thiểu</div>
+            <div class="mn-infoCard__text">
+              Không thu thập quá mức cần thiết. Mỗi trường dữ liệu phải có lý do
+              rõ ràng. Không bán, không phân tích hành vi quảng cáo.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="mn-homeCTA">
+        <div class="mn-homeCTA__inner">
+          <div>
+            <div class="mn-statCard__label">Verify đang ở Phase 2</div>
+            <div style="margin-top:8px;font-size:20px;font-weight:700;">Hiện tại đang ổn định Social Core trước.</div>
+            <div style="margin-top:6px;color:var(--muted);font-size:15px;">Verify sẽ mở khi lõi đã đủ ổn định — đúng thứ tự, không đốt cháy.</div>
+          </div>
+          <div class="mn-homeCTA__actions">
+            <a class="mn-btn mn-btn--primary" href="/feed/">Vào Social Core</a>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem lộ trình</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="mn-footer">
+    <div class="mn-shell mn-footer__inner">
+      <div class="mn-footer__brand">
+        <span class="mn-brand__mark mn-brand__mark--sm">MN</span>
+        <div>
+          <div class="mn-footer__name">Muôn Nơi</div>
+          <div class="mn-footer__tag">Social-first · privacy-first · module-first</div>
+        </div>
+      </div>
+      <div class="mn-footer__right">
+        <a class="mn-footer__link" href="/">Trang chủ</a>
+        <a class="mn-footer__link" href="/ecosystem/">Hệ sinh thái</a>
+        <a class="mn-footer__link" href="/security/">Bảo mật</a>
+        <a class="mn-footer__link" href="/guide/">Hướng dẫn</a>
+        <a class="mn-footer__link" href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a class="mn-footer__link" href="/investment/" data-route="/investment/">Đầu tư</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/ui.js?v=20260327" defer></script>
+</body>
+</html>

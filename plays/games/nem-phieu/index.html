@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Kéo và thả để ném phi tiêu vào bia. Càng gần tâm càng nhiều điểm.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ném Phi Tiêu</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; height:400px; background:#1e293b; border-radius:0.5rem; position:relative; overflow:hidden; margin-bottom:1rem; }
+  canvas { display:block; width:100%; height:100%; }
+</style>
+</head>
+<body data-game="nem-phieu">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <canvas id="game-canvas" width="320" height="400"></canvas>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Ném Phi Tiêu</h1>
+    <p>Kéo chuột hoặc ngón tay để ném phi tiêu vào bia. Càng gần tâm càng nhiều điểm!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'nem-phieu';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Ném Phi Tiêu', desc: 'Kéo từ vị trí bất kỳ trên màn hình rồi thả để ném phi tiêu.' },
+      { title: 'Lực và hướng', desc: 'Kéo dài và nhanh để ném mạnh. Hướng kéo ngược với hướng bay.' },
+      { title: '3 lượt', desc: 'Mỗi màn có 3 phi tiêu. Sau đó bia sẽ nhỏ hơn hoặc di chuyển.' },
+    ],
+    en: [
+      { title: 'Dart Throw', desc: 'Drag from anywhere on screen and release to throw the dart.' },
+      { title: 'Force & Direction', desc: 'Drag longer and faster for more power. Drag opposite to throw direction.' },
+      { title: '3 Darts', desc: 'Each round has 3 darts. Then the target shrinks or moves.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let score = 0, level = 1, isPlaying = false, dartsLeft = 3, dragging = false, dragStart = null;
+  let dart = null, target = { x: 160, y: 100, r: 40 };
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Target rings
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r * 0.7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r * 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#eab308';
+    ctx.beginPath(); ctx.arc(target.x, target.y, target.r * 0.15, 0, Math.PI * 2); ctx.fill();
+
+    if (dart) {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(dart.x, dart.y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+
+    if (dragging && dragStart) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(dragStart.x, dragStart.y); ctx.lineTo(dragStart.x + dragStart.dx, dragStart.y + dragStart.dy); ctx.stroke();
+    }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    if (dart) {
+      dart.x += dart.vx; dart.y += dart.vy;
+      dart.vy += 0.15; // gravity
+      const dx = dart.x - target.x, dy = dart.y - target.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < target.r) {
+        let pts = 10;
+        if (dist < target.r * 0.4) pts = 50;
+        else if (dist < target.r * 0.7) pts = 30;
+        score += pts; hud.setScore(score);
+        dart = null; dartsLeft--;
+        if (dartsLeft <= 0) nextRound();
+      }
+      if (dart && (dart.x < 0 || dart.x > canvas.width || dart.y > canvas.height)) {
+        dart = null; dartsLeft--;
+        if (dartsLeft <= 0) nextRound();
+      }
+    }
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function nextRound() {
+    level++;
+    hud.setLevel(level);
+    dartsLeft = 3;
+    target.r = Math.max(15, 40 - level * 2);
+    target.x = 40 + Math.random() * (canvas.width - 80);
+    target.y = 40 + Math.random() * (canvas.height * 0.4);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; dartsLeft = 3; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    target = { x: 160, y: 100, r: 40 };
+    update();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx * (canvas.width / rect.width), y: cy * (canvas.height / rect.height) };
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (!isPlaying || dart || dartsLeft <= 0) return;
+    dragging = true;
+    const p = getPos(e);
+    dragStart = { x: p.x, y: p.y, dx: 0, dy: 0 };
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const p = getPos(e);
+    dragStart.dx = p.x - dragStart.x;
+    dragStart.dy = p.y - dragStart.y;
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    if (!dragging) return;
+    dragging = false;
+    const power = Math.min(12, Math.sqrt(dragStart.dx*dragStart.dx + dragStart.dy*dragStart.dy) / 10);
+    const angle = Math.atan2(-dragStart.dy, -dragStart.dx);
+    dart = { x: canvas.width/2, y: canvas.height - 20, vx: Math.cos(angle)*power, vy: Math.sin(angle)*power };
+  });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

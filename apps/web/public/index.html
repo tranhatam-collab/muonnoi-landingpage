@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0f14" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <title>Muôn Nơi | Hạ tầng số cho đời sống thật</title>
+  <meta
+    name="description"
+    content="Muôn Nơi là hạ tầng số cho đời sống thật: social-first, privacy-first, module-first, mở từng lớp bằng kế hoạch rõ ràng và bằng chứng vận hành."
+  />
+  <link rel="canonical" href="https://www.muonnoi.org/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Muôn Nơi | Hạ tầng số cho đời sống thật" />
+  <meta property="og:description" content="Trang chủ Muôn Nơi: cộng đồng thật, kế hoạch rõ, triển khai có bằng chứng và không chạy theo vòng lặp số liệu ảo." />
+  <meta property="og:url" content="https://www.muonnoi.org/" />
+  <meta property="og:image" content="https://www.muonnoi.org/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/assets/ui.css?v=1.1.0" />
+
+  <style>
+    .i18n-en{display:none}
+    html[lang="en"] .i18n-vi{display:none}
+    html[lang="en"] .i18n-en{display:inline}
+  </style>
+</head>
+<body class="mn-body">
+  <a class="mn-srOnlyFocus" href="#main">Đi tới nội dung</a>
+
+  <div class="mn-bg" aria-hidden="true">
+    <div class="mn-bg__grid"></div>
+    <div class="mn-bg__glow mn-bg__glow--1"></div>
+    <div class="mn-bg__glow mn-bg__glow--2"></div>
+    <div class="mn-bg__noise"></div>
+  </div>
+
+  <header class="mn-topbar" role="banner">
+    <div class="mn-shell mn-topbar__inner">
+      <a class="mn-brand" href="/" data-route="/">
+        <span class="mn-brand__mark">MN</span>
+        <span class="mn-brand__text">
+          <span class="mn-brand__name">Muôn Nơi</span>
+          <span class="mn-brand__sub" data-i18n="brandSub">Hạ tầng số cho đời sống thật</span>
+        </span>
+      </a>
+
+      <nav class="mn-mainNav" aria-label="Điều hướng chính">
+        <a href="/" data-route="/" data-i18n="navHome">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/" data-i18n="navEcosystem">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/" data-i18n="navRoadmap">Lộ trình</a>
+        <a href="/security/" data-route="/security/" data-i18n="navSecurity">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/" data-i18n="navGuide">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+      </nav>
+
+      <div class="mn-topbar__actions">
+        <button class="mn-iconBtn" type="button" id="btnTheme" aria-label="Đổi giao diện">
+          <span id="themeIcon">◐</span>
+        </button>
+
+        <button class="mn-langBtn" type="button" id="btnLang" aria-label="Đổi ngôn ngữ">
+          <span id="langLabel">Tiếng Việt</span>
+        </button>
+
+        <a class="mn-btn mn-btn--ghost" href="https://app.muonnoi.org/join/" data-i18n="navLogin">Đăng nhập</a>
+        <a class="mn-btn mn-btn--primary" href="/feed/" data-route="/feed/" data-i18n="openApp">Mở hệ</a>
+
+        <button class="mn-burger" id="mnBurger" type="button" aria-label="Mở menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mn-mobileMenu" id="mnMobileMenu" hidden>
+      <div class="mn-mobileMenu__links">
+        <a href="/" data-route="/" data-i18n="navHome">Trang chủ</a>
+        <a href="/ecosystem/" data-route="/ecosystem/" data-i18n="navEcosystem">Hệ sinh thái</a>
+        <a href="/roadmap/" data-route="/roadmap/" data-i18n="navRoadmap">Lộ trình</a>
+        <a href="/security/" data-route="/security/" data-i18n="navSecurity">Bảo mật</a>
+        <a href="/guide/" data-route="/guide/" data-i18n="navGuide">Hướng dẫn</a>
+        <a href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a href="/feed/" data-route="/feed/" data-i18n="openApp">Mở hệ</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="mn-page">
+    <div class="mn-shell">
+      <section class="mn-homeHero">
+        <div class="mn-homeHero__content">
+          <div class="mn-kicker">Trang chủ Muôn Nơi · 2026</div>
+
+          <h1 class="mn-h1">
+            Trang chủ cộng đồng vận hành theo đời sống thật
+          </h1>
+
+          <p class="mn-homeHero__desc">
+            Muôn Nơi vận hành theo 3 trục: social-first, privacy-first, module-first.
+            Mục tiêu là xây hạ tầng số cho đời sống thật, rõ kế hoạch, và mở từng lớp theo năng lực vận hành.
+          </p>
+
+          <div class="mn-homeHero__actions">
+            <a class="mn-btn mn-btn--primary" href="/plan/">Xem kế hoạch mới nhất</a>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem lộ trình</a>
+            <a class="mn-btn mn-btn--ghost" href="/investment/">Xem kế hoạch đầu tư</a>
+            <a class="mn-btn mn-btn--ghost" href="/manifesto/">Đọc tuyên ngôn</a>
+          </div>
+
+          <div class="mn-homeHero__metaGrid">
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Giá trị cốt lõi</div>
+              <div class="mn-statCard__value">
+                Social-first · Privacy-first · Module-first
+              </div>
+            </article>
+
+            <article class="mn-statCard">
+              <div class="mn-statCard__label">Điểm chốt mới</div>
+              <div class="mn-statCard__value">
+                Brand gate, trang kế hoạch, trang đầu tư và liên kết toàn hệ được khóa theo cùng một chuẩn.
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <aside class="mn-homeHero__preview">
+          <div class="mn-previewWindow">
+            <div class="mn-previewWindow__top">
+              <div class="mn-previewWindow__dots"><span></span><span></span><span></span></div>
+            <div class="mn-previewWindow__title">Muôn Nơi Brand Gate</div>
+            </div>
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">PQ</span>
+                <div>
+                  <div class="mn-previewPost__name">Public content</div>
+                  <div class="mn-previewPost__time">Trang chủ</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">
+                Kế hoạch hôm nay, brand gate và kế hoạch 30-90-180 ngày được công bố công khai.
+              </div>
+              <div class="mn-previewPost__body">
+                Mọi cập nhật đều gắn link vào lộ trình, trạng thái và trách nhiệm từng team.
+              </div>
+              <div class="mn-previewPost__actions">
+                <span>Plan</span>
+                <span>Mobile</span>
+                <span>Trust</span>
+              </div>
+            </div>
+
+            <div class="mn-previewPost">
+              <div class="mn-previewPost__meta">
+                <span class="mn-avatar mn-avatar--xs">IQ</span>
+                <div>
+                  <div class="mn-previewPost__name">Investment lane</div>
+                  <div class="mn-previewPost__time">Dự án</div>
+                </div>
+              </div>
+              <div class="mn-previewPost__title">
+                Trang đầu tư dùng để công bố phạm vi hợp tác, không để hứa lợi nhuận.
+              </div>
+              <div class="mn-previewPost__body">
+                Ưu tiên tăng trust, minh bạch, và khả năng mở rộng hạ tầng.
+              </div>
+              <div class="mn-previewPost__actions">
+                <span>Proof-first</span>
+                <span>Governance</span>
+                <span>Execution</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Lộ trình và công bố hôm nay</h2>
+          <p class="mn-sectionDesc">
+            Mỗi ngày cập nhật đều đi theo một kế hoạch cụ thể, có người chốt, có route đi cùng trạng thái và có bằng chứng xác nhận.
+          </p>
+        </div>
+
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Đã thực hiện</div>
+            <h3 class="mn-infoCard__title">Trang chủ + /plan + /investment</h3>
+            <p class="mn-infoCard__text">
+              Hoàn tất nội dung trang chủ mới và bổ sung hai trang trọng tâm: công bố kế hoạch và trang đầu tư.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/">Về trang chủ</a>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Đang mở</div>
+            <h3 class="mn-infoCard__title">Nhúng brand gate vào các sub-page chính</h3>
+            <p class="mn-infoCard__text">
+              Kế hoạch, tên gọi, ngôn ngữ, logo và claim-safety đang được truyền đến roadmap, security, guide, status để giữ nhất quán thông tin.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/roadmap/">Xem lộ trình</a>
+          </article>
+
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Tiếp theo</div>
+            <h3 class="mn-infoCard__title">Đồng bộ full trang kế toán và quy trình nhóm</h3>
+            <p class="mn-infoCard__text">
+              Sau khi brand gate vào live surface, team tiếp tục khóa DNS/custom-domain, payment/email gate, bản đồ kỹ thuật mobile và launch checklist.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/status/">Xem trạng thái đội</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="mn-homeSection">
+        <div class="mn-sectionHead">
+          <h2 class="mn-h2">Thông báo hôm nay</h2>
+          <p class="mn-sectionDesc">
+            Ngày 11/05/2026: công bố kế hoạch và mở trang đầu tư trong cùng hệ public shell.
+          </p>
+        </div>
+        <div class="mn-cardGrid mn-cardGrid--3">
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Trang chủ</div>
+            <h3 class="mn-infoCard__title">Cập nhật đầy đủ</h3>
+            <p class="mn-infoCard__text">
+              Header, mobile menu, footer đã đồng bộ để trỏ /plan và /investment trên toàn luồng.
+            </p>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Sub-page</div>
+            <h3 class="mn-infoCard__title">Nhúng kế hoạch</h3>
+            <p class="mn-infoCard__text">
+              host, partners, quests, ecosystem, roadmap, security, guide, status và verify đều có link kế hoạch mở rộng.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/ecosystem/">Xem trạng thái các subdomain</a>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Công bố chính thức</div>
+            <h3 class="mn-infoCard__title">About · Manifesto · Press · Newsletter</h3>
+            <p class="mn-infoCard__text">
+              Bộ trang công bố đã được mở để thống nhất thông điệp public và luồng cập nhật chính thức.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/about/">Mở trang công bố</a>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Nhánh mới · Voice & Place</div>
+            <h3 class="mn-infoCard__title">Người Việt Muôn Nơi · Đi xa để quay trở về</h3>
+            <p class="mn-infoCard__text">
+              Nhánh hành trình dành cho người Việt trong nước và toàn cầu — nơi con người được đặt vào môi trường thật để sống, làm, học, gặp gỡ và trưởng thành. Không tour. Không khoá học. Không hứa thu nhập.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="https://nguoiviet.muonnoi.org/">Mở Người Việt Muôn Nơi →</a>
+          </article>
+          <article class="mn-infoCard">
+            <div class="mn-infoCard__kicker">Tiếp theo</div>
+            <h3 class="mn-infoCard__title">Không dừng</h3>
+            <p class="mn-infoCard__text">
+              Giữ đúng thông điệp: không hứa lợi nhuận, không phóng đại chỉ số, chỉ công bố kế hoạch đã thực thi.
+            </p>
+            <a class="mn-btn mn-btn--ghost" href="/quests/">Mở toàn bộ bài Life Quest</a>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="mn-footer">
+    <div class="mn-shell mn-footer__inner">
+      <div class="mn-footer__brand">
+        <span class="mn-brand__mark mn-brand__mark--sm">MN</span>
+        <div>
+          <div class="mn-footer__name">Muôn Nơi</div>
+          <div class="mn-footer__tag" data-i18n="footerTag">Social-first • privacy-first • module-first</div>
+        </div>
+      </div>
+
+      <div class="mn-footer__right">
+        <a class="mn-footer__link" href="/" data-route="/" data-i18n="navHome">Trang chủ</a>
+        <a class="mn-footer__link" href="/ecosystem/" data-route="/ecosystem/" data-i18n="navEcosystem">Hệ sinh thái</a>
+        <a class="mn-footer__link" href="/about/" data-route="/about/">Giới thiệu</a>
+        <a class="mn-footer__link" href="/manifesto/" data-route="/manifesto/">Tuyên ngôn</a>
+        <a class="mn-footer__link" href="/press/" data-route="/press/">Báo chí</a>
+        <a class="mn-footer__link" href="/newsletter/" data-route="/newsletter/">Bản tin</a>
+        <a class="mn-footer__link" href="/plan/" data-route="/plan/">Kế hoạch</a>
+        <a class="mn-footer__link" href="/investment/" data-route="/investment/">Đầu tư</a>
+        <a class="mn-footer__link" href="/security/" data-route="/security/" data-i18n="navSecurity">Bảo mật</a>
+        <a class="mn-footer__link" href="/guide/" data-route="/guide/" data-i18n="navGuide">Hướng dẫn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/ui.js?v=1.1.0" defer></script>
+</body>
+</html>

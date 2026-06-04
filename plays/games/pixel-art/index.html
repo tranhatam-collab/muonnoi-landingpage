@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tô màu các ô pixel theo số chỉ dẫn để tạo tranh.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pixel Art</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .pixel-grid { display:grid; gap:2px; margin-bottom:0.75rem; }
+  .pixel-cell { width:28px; height:28px; background:#334155; border-radius:2px; cursor:pointer; transition:background 0.2s; }
+  .pixel-cell.filled { background:#eab308; }
+  .pixel-cell.wrong { background:#ef4444; }
+  #sample-grid { display:grid; gap:2px; margin-bottom:0.5rem; opacity:0.9; }
+  .sample-cell { width:14px; height:14px; background:#334155; border-radius:2px; }
+  .sample-cell.filled { background:#eab308; }
+  .label { font-size:0.75rem; color:#94a3b8; margin-bottom:0.25rem; }
+</style>
+</head>
+<body data-game="pixel-art">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="label" id="sample-label">Mẫu</div>
+  <div class="sample-grid" id="sample-grid"></div>
+  <div class="label">Tô theo mẫu</div>
+  <div class="pixel-grid" id="pixel-grid"></div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Pixel Art</h1>
+    <p>Quan sát mẫu và tô đúng các ô trên lưới lớn.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'pixel-art';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Pixel Art', desc: 'Quan sát mẫu hình ở trên. Các ô vàng là cần tô.' },
+      { title: 'Tô màu', desc: 'Click các ô tương ứng trên lưới lớn bên dưới để tô màu.' },
+      { title: 'Không sai', desc: 'Tô đúng hết mẫu để qua màn. Tô sai ô sẽ bị trừ điểm.' },
+    ],
+    en: [
+      { title: 'Pixel Art', desc: 'Look at the pattern above. Yellow cells need to be filled.' },
+      { title: 'Paint', desc: 'Click the corresponding cells on the big grid below to fill them.' },
+      { title: 'No mistakes', desc: 'Fill the whole pattern to pass. Wrong cells cost points.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const sampleGrid = document.getElementById('sample-grid');
+  const pixelGrid = document.getElementById('pixel-grid');
+
+  let score = 0, level = 1, isPlaying = false, pattern = new Set(), filled = new Set(), size = 6, wrongCount = 0, maxWrong = 3;
+
+  function getConfig(lv) {
+    if (lv <= 2) return { size: 4, cells: 3 };
+    if (lv <= 4) return { size: 5, cells: 5 };
+    if (lv <= 6) return { size: 6, cells: 8 };
+    return { size: 8, cells: 12 };
+  }
+
+  function startLevel() {
+    const cfg = getConfig(level);
+    size = cfg.size;
+    const total = size * size;
+    pattern = new Set();
+    while (pattern.size < cfg.cells) pattern.add(Math.floor(Math.random() * total));
+    filled = new Set(); wrongCount = 0;
+    sampleGrid.style.gridTemplateColumns = `repeat(${size}, 14px)`;
+    sampleGrid.innerHTML = '';
+    pixelGrid.style.gridTemplateColumns = `repeat(${size}, 28px)`;
+    pixelGrid.innerHTML = '';
+
+    for (let i = 0; i < total; i++) {
+      const sc = document.createElement('div');
+      sc.className = 'sample-cell' + (pattern.has(i) ? ' filled' : '');
+      sampleGrid.appendChild(sc);
+
+      const pc = document.createElement('div');
+      pc.className = 'pixel-cell';
+      pc.addEventListener('click', () => onPixelClick(i, pc));
+      pixelGrid.appendChild(pc);
+    }
+    hud.setLevel(level);
+  }
+
+  function onPixelClick(i, cell) {
+    if (!isPlaying || filled.has(i)) return;
+    if (pattern.has(i)) {
+      cell.classList.add('filled');
+      filled.add(i);
+      score += 10;
+      hud.setScore(score);
+      if (filled.size >= pattern.size) {
+        level++;
+        setTimeout(startLevel, 500);
+      }
+    } else {
+      cell.classList.add('wrong');
+      wrongCount++;
+      score = Math.max(0, score - 20);
+      hud.setScore(score);
+      setTimeout(() => cell.classList.remove('wrong'), 400);
+      if (wrongCount >= maxWrong) { endGame(); return; }
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1);
+    startLevel();
+  }
+
+  function endGame() {
+    isPlaying = false;
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { location.reload(); });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

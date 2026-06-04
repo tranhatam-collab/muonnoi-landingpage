@@ -1,0 +1,20 @@
+# Clean routes to folders
+/ecosystem   /ecosystem/   301
+/roadmap     /roadmap/     301
+/security    /security/    301
+/guide       /guide/       301
+/quests      /quests/      301
+/host        /host/        301
+/investment  /investment/  301
+/plan        /plan/        301
+/partners    /partners/    301
+/status      /status/      301
+/verify      /verify/      301
+/commit      /commit/      301
+/complaints  /complaints/  301
+/admin       /admin/       301
+/feed        /feed/        301
+/about       /about/       301
+/manifesto   /manifesto/   301
+/press       /press/       301
+/newsletter  /newsletter/  301

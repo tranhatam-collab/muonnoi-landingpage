@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="description" content="Nguyên mẫu Tier 3: mỗi mắt xích là một việc tử tế THẬT bạn làm ngoài đời, rồi truyền tiếp."/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Chuỗi Tử Tế · Muôn Nơi Plays</title>
+  <link rel="stylesheet" href="../../assets/plays.css">
+  <style>
+    .proto{font-size:11px;color:var(--warn);border:1px solid rgba(255,214,10,.35);
+      padding:6px 10px;border-radius:999px;display:inline-block;margin-bottom:8px}
+    .suggest{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+    .suggest .pill{font-size:13px}
+    .suggest .pill.sel{border-color:var(--brand);color:var(--text)}
+    .chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px}
+    .link{padding:8px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px}
+    .link.done{border-color:rgba(48,209,88,.5)}
+    .link .x{color:var(--ok)}
+    .conn{color:var(--muted)}
+    .globe{font-size:30px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand2));
+      -webkit-background-clip:text;background-clip:text;color:transparent}
+    .field{margin:10px 0}
+    label.k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+    .done-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="game-shell" style="max-width:620px">
+    <div class="game-top">
+      <a class="back" href="../../index.html">‹ Tất cả game</a>
+      <div class="brand"><div class="mark"></div><b>Chuỗi Tử Tế</b></div>
+    </div>
+
+    <div class="hud">
+      <div class="stat"><div class="k">Mắt xích của bạn</div><div class="v" id="hLinks">0</div></div>
+      <div class="stat"><div class="k">Đã làm thật</div><div class="v" id="hDone">0</div></div>
+      <div class="stat"><div class="k">Muôn Điểm</div><div class="v" id="hPts">0</div></div>
+    </div>
+
+    <div class="card">
+      <span class="proto">NGUYÊN MẪU · Tier 3</span>
+      <p class="small">
+        Đây không phải game trên màn hình. <b>Mỗi mắt xích là một việc tử tế bạn làm THẬT ngoài đời</b>,
+        rồi <b>truyền tiếp</b> cho người khác. Bản thật sẽ nối những người thật qua tài khoản Muôn Nơi và
+        có kiểm chứng. Bản nguyên mẫu này lưu cục bộ và tin ở lòng tốt của bạn.
+      </p>
+      <div style="text-align:center;margin:14px 0">
+        <div class="small">Chuỗi tử tế toàn cầu (mô phỏng)</div>
+        <div class="globe" id="globe">—</div>
+        <div class="small">việc tử tế đã được hứa hẹn</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Thêm một mắt xích</h2>
+      <label class="k">Chọn hoặc tự viết một việc tử tế</label>
+      <div class="suggest" id="suggest"></div>
+      <div class="field">
+        <input id="act" placeholder="vd: Gọi điện hỏi thăm ông bà…" />
+      </div>
+      <div class="field">
+        <label class="k">Bạn sẽ truyền tiếp cho ai? (tuỳ chọn)</label>
+        <input id="passto" placeholder="vd: một người bạn, một người lạ…" />
+      </div>
+      <button class="btn full" id="addBtn">+ Thêm mắt xích & hứa làm (+5 Muôn Điểm)</button>
+      <div class="small" id="hintAuth" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Chuỗi của bạn</h2>
+      <div class="small" id="empty">Chưa có mắt xích nào. Hãy bắt đầu bằng một điều tử tế nhỏ 🌱</div>
+      <div class="chain" id="chain"></div>
+    </div>
+
+    <div class="footer">Tử tế không có điểm kết thúc — luôn còn một người nữa để giúp.</div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../../assets/plays-sdk.js"></script>
+  <script>
+  const GAME_ID='chuoi-tu-te';
+  const FREE=3; // số mắt xích miễn phí trước khi cần đăng ký
+  const $=id=>document.getElementById(id);
+  function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1400);}
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  const SUGGEST=['Gọi hỏi thăm người thân','Nhường chỗ cho người cần','Cảm ơn một người giúp mình',
+    'Nhặt rác nơi công cộng','Khen ngợi chân thành ai đó','Giúp người lạ một việc nhỏ',
+    'Tặng đồ mình không dùng','Lắng nghe một người đang buồn'];
+
+  let acts=[];       // {text, passto, done, ts}
+  let pts=0;
+  let selected='';
+
+  function globalSim(){
+    // số mô phỏng "sống động": baseline + theo thời gian + đóng góp của bạn
+    const base=128473;
+    const perHour=37;
+    const since=Math.floor((Date.now()-Date.UTC(2026,0,1))/3600000);
+    const mine=acts.length;
+    return base + since*perHour + mine;
+  }
+
+  function render(){
+    $('hLinks').textContent=acts.length;
+    $('hDone').textContent=acts.filter(a=>a.done).length;
+    $('hPts').textContent=pts;
+    $('globe').textContent=globalSim().toLocaleString('vi-VN');
+    $('empty').style.display=acts.length?'none':'block';
+    const c=$('chain'); c.innerHTML='';
+    acts.forEach((a,i)=>{
+      if(i>0){ const s=document.createElement('span'); s.className='conn'; s.textContent='─'; c.appendChild(s); }
+      const d=document.createElement('span');
+      d.className='link'+(a.done?' done':'');
+      const check = a.done ? '<span class="x">✓</span> ' : '';
+      const pass = a.passto ? ` <span class="conn">→ ${esc(a.passto)}</span>` : '';
+      const btn = a.done ? '' : ` <button class="pill" style="padding:2px 8px;font-size:11px" data-i="${i}">đã làm? +20</button>`;
+      d.innerHTML = check + esc(a.text) + pass + btn;
+      c.appendChild(d);
+    });
+    c.querySelectorAll('button[data-i]').forEach(b=> b.onclick=()=>markDone(+b.dataset.i));
+  }
+
+  async function save(){
+    // level = số việc đã làm thật; score = tổng mắt xích
+    await MNPlays.saveProgress(GAME_ID,{ status:'playing',
+      level: acts.filter(a=>a.done).length, score: acts.length, state:{acts} });
+  }
+
+  async function add(){
+    const text=($('act').value.trim()||selected).trim();
+    if(!text){ toast('Hãy chọn hoặc viết một việc tử tế.'); return; }
+    const gate = await MNPlays.beginPlay(GAME_ID, FREE);
+    if (!gate.allowed) return; // SDK hiện modal đồng ý / đăng ký
+    const passto=$('passto').value.trim();
+    acts.push({text, passto, done:false, ts:Date.now()});
+    $('act').value=''; $('passto').value=''; selected='';
+    document.querySelectorAll('.suggest .pill').forEach(p=>p.classList.remove('sel'));
+    const res=await MNPlays.awardPoints(GAME_ID,5,'kindness-pledge'); pts = res? (res.balance||pts+5) : pts+5;
+    await save(); render();
+    toast('Đã thêm mắt xích. Giờ hãy làm điều đó ngoài đời 💛');
+  }
+
+  async function markDone(i){
+    if(!acts[i]||acts[i].done) return;
+    acts[i].done=true;
+    const res=await MNPlays.awardPoints(GAME_ID,20,'kindness-done'); pts = res? (res.balance||pts+20) : pts+20;
+    await save(); render();
+    toast('Tuyệt vời! Một việc tử tế thật đã hoàn thành 🌟');
+  }
+
+  // suggestions
+  (function(){
+    const s=$('suggest');
+    SUGGEST.forEach(t=>{
+      const p=document.createElement('span'); p.className='pill'; p.textContent=t;
+      p.onclick=()=>{ selected=t; $('act').value=t;
+        document.querySelectorAll('.suggest .pill').forEach(x=>x.classList.toggle('sel',x===p)); };
+      s.appendChild(p);
+    });
+  })();
+
+  $('addBtn').onclick=add;
+
+  (async ()=>{
+    await MNPlays.init();
+    const p=await MNPlays.loadProgress(GAME_ID);
+    if(p && p.state && Array.isArray(p.state.acts)) acts=p.state.acts;
+    pts=await MNPlays.getBalance();
+    $('hintAuth').innerHTML=MNPlays.isLoggedIn()
+      ?'✓ Chuỗi & điểm của bạn được lưu vào tài khoản.'
+      :'<a href="'+MNPlays.loginUrl()+'" style="color:var(--brand2)">Đăng nhập</a> để lưu chuỗi tử tế và nhận Muôn Điểm thật.';
+    render();
+  })();
+  </script>
+</body>
+</html>

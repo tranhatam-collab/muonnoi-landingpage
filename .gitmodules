@@ -1,0 +1,20 @@
+[submodule "ai.muonnoi.org"]
+	path = ai.muonnoi.org
+	url = ./ai.muonnoi.org
+	branch = main
+[submodule "app.muonnoi.org"]
+	path = app.muonnoi.org
+	url = ./app.muonnoi.org
+	branch = main
+[submodule "docs.muonnoi.org"]
+	path = docs.muonnoi.org
+	url = ./docs.muonnoi.org
+	branch = main
+[submodule "cuocsong.muonnoi.org"]
+	path = cuocsong.muonnoi.org
+	url = ./cuocsong.muonnoi.org
+	branch = main
+[submodule "nguoiviet.muonnoi.org"]
+	path = nguoiviet.muonnoi.org
+	url = ./nguoiviet.muonnoi.org
+	branch = main

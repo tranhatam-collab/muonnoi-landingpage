@@ -1,0 +1,16 @@
+domain,brand_name,role,accent_name,accent_hex,notes
+muonnoi.org,Muôn Nơi,Master brand root shell,Azure,#3B7EFF,Homepage + ecosystem navigator
+app.muonnoi.org,Muôn Nơi · App,App shell,Azure,#3B7EFF,Web + mobile web + app container
+docs.muonnoi.org,Muôn Nơi · Docs,Docs hub,Charcoal,#0A0F14,Technical + governance documentation
+nguoiviet.muonnoi.org,Người Việt Muôn Nơi,Diaspora community hub,Vermillion,#D84315,Journey + stories + community
+lamviec.muonnoi.org,Muôn Nơi · Làm Việc,Work ecosystem,Vermillion,#D84315,Work module
+dulich.muonnoi.org,Muôn Nơi · Du Lịch,Travel quests,Teal,#00897B,Travel module
+suckhoe.muonnoi.org,Muôn Nơi · Sức Khỏe,Health quests,Teal,#00897B,Health module
+sangtao.muonnoi.org,Muôn Nơi · Sáng Tạo,Creation quests,Gold,#D4AF37,Creation module
+hoctap.muonnoi.org,Muôn Nơi · Học Tập,Learning quests,Azure,#3B7EFF,Learning module
+family.muonnoi.org,Muôn Nơi · Gia Đình,Family layer,Gold,#D4AF37,Family module
+dautu.muonnoi.org,Muôn Nơi · Đầu Tư,Investment lane,Teal,#00897B,Investment module
+duan.muonnoi.org,Muôn Nơi · Dự Án,Project lane,Azure,#3B7EFF,Project module
+congdong.muonnoi.org,Muôn Nơi · Cộng Đồng,Community layer,Vermillion,#D84315,Community module
+trust.muonnoi.org,Muôn Nơi · Trust,Trust & complaints,Gold,#D4AF37,Trust module
+nhachung.muonnoi.org,Muôn Nơi · Nhà Chung,Housing/community,Teal,#00897B,Housing module

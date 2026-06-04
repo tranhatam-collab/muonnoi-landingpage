@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Hái các vì sao rơi trên màn hình.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hai Sao — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #star-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="hai-sao">
+
+<div id="hud-root"></div>
+<canvas id="star-canvas" width="320" height="320" aria-label="Star canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Hai Sao</h1>
+    <p>Cham các ngoi sao dang rơi để hai chung. Dung để sao chạm dat!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'hai-sao';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Hai Sao', desc: 'Các ngôi sao sẽ rơi từ trên xuống. Chạm vào chúng để hái. Nếu sao chạm đất, bạn mất mạng.' },
+      { title: 'Tốc độ tăng', desc: 'Càng về sáu sao rơi càng nhanh va càng nhiều. Sao vàng có điểm gấp đôi!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn. Hai càng nhiều càng tốt!' },
+    ],
+    en: [
+      { title: 'Star Catch', desc: 'Stars fall from above. Tap them to catch. If a star hits the ground, you lose a life.' },
+      { title: 'Speed Up', desc: 'Later waves drop faster and more stars. Gold stars are worth double!' },
+      { title: 'Endless', desc: 'No limit. Catch as many as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('star-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let stars = [], score = 0, level = 1, lives = 3, isPlaying = false, speed = 1.5, spawnRate = 0.02, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function spawnStar() {
+    const r = 8 + Math.random() * 8;
+    const isGold = Math.random() < 0.2;
+    stars.push({ x: r + Math.random() * (canvas.width - r * 2), y: -r, r, speed: speed + Math.random() * 1.5, isGold, points: isGold ? 20 : 10 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Ground
+    ctx.fillStyle = '#374151'; ctx.fillRect(0, canvas.height - 8, canvas.width, 8);
+    // Stars
+    for (const s of stars) {
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.isGold ? '#f59e0b' : '#e5e7eb';
+      ctx.fill(); ctx.strokeStyle = s.isGold ? '#fbbf24' : '#9ca3af'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    // Lives
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    for (let i = stars.length - 1; i >= 0; i--) {
+      const s = stars[i]; s.y += s.speed;
+      if (s.y > canvas.height - s.r) { stars.splice(i, 1); lives--; if (lives <= 0) { endGame(); return; } continue; }
+    }
+    if (Math.random() < spawnRate) spawnStar();
+    if (score > 0 && score % 80 === 0) { level++; speed += 0.3; spawnRate = Math.min(0.05, spawnRate + 0.003); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    for (let i = stars.length - 1; i >= 0; i--) {
+      const s = stars[i]; const dx = x - s.x, dy = y - s.y;
+      if (dx * dx + dy * dy < s.r * s.r) { stars.splice(i, 1); score += s.points; return; }
+    }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); stars = []; score = 0; level = 1; lives = 3; speed = 1.5; spawnRate = 0.02; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

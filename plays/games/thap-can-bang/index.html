@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Xếp khối lên nhau mà không đổ.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thap Can Bang — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #tower-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="thap-can-bang">
+
+<div id="hud-root"></div>
+<canvas id="tower-canvas" width="320" height="320" aria-label="Tower canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Tháp Cân Bằng</h1>
+    <p>Xếp các khối lên nhau sao cho cân bằng. Khối càng nhỏ, càng khó!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'thap-can-bang';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Tháp Cân Bằng', desc: 'Khối trên cùng sẽ di chuyển ngang qua màn hình. Nhấn để thả rơi nó lên các khối bên dưới.' },
+      { title: 'Cân bằng', desc: 'Nếu khối nằm lệch quá nhiều so với khối dưới, nó sẽ rơi xuống và bạn mất mạng.' },
+      { title: 'Vô hạn', desc: 'Càng cao càng khó. Thử xem bạn xếp được bao nhiêu tầng!' },
+    ],
+    en: [
+      { title: 'Balance Tower', desc: 'The top block moves horizontally across the screen. Tap to drop it onto the blocks below.' },
+      { title: 'Balance', desc: 'If the block lands too far off-center from the one below, it will fall and you lose a life.' },
+      { title: 'Endless', desc: 'The higher you go, the harder it gets. See how many floors you can stack!' },
+    ],
+  };
+  const canvas = document.getElementById('tower-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let isPlaying = false, score = 0, level = 1, lives = 3;
+  let blocks = [];
+  let currentBlock = null;
+  let blockW = 120, blockH = 24, speed = 2, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.55, 500); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function resetBlock() {
+    const y = canvas.height - (blocks.length + 1) * blockH - 20;
+    currentBlock = { x: 0, y: y, w: blockW, h: blockH, dir: 1 };
+    if (blocks.length > 0) {
+      const b = blocks[blocks.length - 1];
+      currentBlock.x = b.x + (Math.random() - 0.5) * (b.w - blockW) * 0.3;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Ground
+    ctx.fillStyle = '#374151'; ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+    // Placed blocks
+    for (const b of blocks) {
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2; ctx.strokeRect(b.x, b.y, b.w, b.h);
+    }
+    // Current block
+    if (currentBlock) {
+      ctx.fillStyle = '#10b981'; ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
+      ctx.strokeStyle = '#059669'; ctx.lineWidth = 2; ctx.strokeRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
+    }
+    // Lives
+    ctx.fillStyle = '#ef4444';
+    for (let i = 0; i < lives; i++) { ctx.beginPath(); ctx.arc(15 + i * 18, 15, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    if (currentBlock) {
+      currentBlock.x += speed * currentBlock.dir;
+      if (currentBlock.x <= 0 || currentBlock.x + currentBlock.w >= canvas.width) currentBlock.dir *= -1;
+    }
+    draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap() {
+    if (!isPlaying || !currentBlock) return;
+    if (blocks.length === 0) {
+      blocks.push({ ...currentBlock }); score++; resetBlock();
+    } else {
+      const prev = blocks[blocks.length - 1];
+      const overlap = Math.max(0, Math.min(currentBlock.x + currentBlock.w, prev.x + prev.w) - Math.max(currentBlock.x, prev.x));
+      if (overlap < currentBlock.w * 0.3) { lives--; if (lives <= 0) { endGame(); return; } else { resetBlock(); return; } }
+      // Trim block to overlap
+      const newX = Math.max(currentBlock.x, prev.x);
+      const newW = overlap;
+      blocks.push({ x: newX, y: currentBlock.y, w: newW, h: blockH });
+      currentBlock = null; score++; blockW = newW;
+      if (score % 5 === 0) { level++; speed = Math.min(6, speed + 0.3); hud.setLevel(level); }
+      hud.setScore(score);
+      setTimeout(resetBlock, 200);
+    }
+    // Scroll up if too high
+    if (blocks.length > 8) { blocks.shift(); for (const b of blocks) b.y += blockH; if (currentBlock) currentBlock.y += blockH; }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); blocks = []; score = 0; level = 1; lives = 3; blockW = 120; speed = 2;
+    hud.setScore(0); hud.setLevel(1); isPlaying = true; resetBlock(); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

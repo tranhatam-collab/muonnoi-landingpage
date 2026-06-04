@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tồn tại càng lâu càng tốt trong môi trường thù địch.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Song Sot — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #survive-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="song-sot">
+
+<div id="hud-root"></div>
+<canvas id="survive-canvas" width="320" height="320" aria-label="Survive canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Song Sot</h1>
+    <p>Ton tai càng lâu càng tốt trong môi trường thù địch.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'song-sot';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Song Sot', desc: 'Keo nhấn vật cua bạn trên màn hinh để tranh các hình tròn đỏ dich. Cang lau càng nhiều dich.' },
+      { title: 'Tien trien', desc: 'Dich se xuất hiện càng nhiều va di chuyển càng nhanh. Thu thấp các hat vàng để hồi máu.' },
+      { title: 'Vô hạn', desc: 'Khong có màn cuoi. Ton tai lau nhat có thể!' },
+    ],
+    en: [
+      { title: 'Survive', desc: 'Drag your character to avoid red enemy circles. More enemies spawn over time.' },
+      { title: 'Progress', desc: 'Enemies spawn more and move faster. Collect gold dots to heal.' },
+      { title: 'Endless', desc: 'No final level. Survive as long as possible!' },
+    ],
+  };
+  const canvas = document.getElementById('survive-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let player = { x: 160, y: 160, r: 10, hp: 100 };
+  let enemies = [], items = [], score = 0, level = 1, isPlaying = false;
+  let enemySpeed = 0.8, spawnRate = 0.01, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.5, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); }
+
+  function spawnEnemy() {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.max(canvas.width, canvas.height) / 2 + 20;
+    enemies.push({ x: canvas.width / 2 + Math.cos(angle) * dist, y: canvas.height / 2 + Math.sin(angle) * dist, r: 8 + Math.random() * 8, speed: enemySpeed + Math.random() * 0.5 });
+  }
+
+  function spawnItem() {
+    items.push({ x: 20 + Math.random() * (canvas.width - 40), y: 20 + Math.random() * (canvas.height - 40), r: 5 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Items
+    ctx.fillStyle = '#f59e0b';
+    for (const ít of items) { ctx.beginPath(); ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2); ctx.fill(); }
+    // Enemies
+    ctx.fillStyle = '#ef4444';
+    for (const e of enemies) { ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); }
+    // Player
+    ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
+    // HP bar
+    ctx.fillStyle = '#374151'; ctx.fillRect(10, 10, 100, 8);
+    ctx.fillStyle = player.hp > 50 ? '#10b981' : player.hp > 25 ? '#f59e0b' : '#ef4444';
+    ctx.fillRect(10, 10, player.hp, 8);
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    // Move enemies toward player
+    for (const e of enemies) {
+      const dx = player.x - e.x, dy = player.y - e.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      e.x += (dx / d) * e.speed; e.y += (dy / d) * e.speed;
+      // Collision
+      const dist = Math.sqrt((player.x - e.x) ** 2 + (player.y - e.y) ** 2);
+      if (dist < player.r + e.r) { player.hp -= 2; if (player.hp <= 0) { endGame(); return; } }
+    }
+    // Items
+    for (let i = items.length - 1; i >= 0; i--) {
+      const ít = items[i];
+      const d = Math.sqrt((player.x - it.x) ** 2 + (player.y - it.y) ** 2);
+      if (d < player.r + it.r) { items.splice(i, 1); player.hp = Math.min(100, player.hp + 15); score += 10; }
+    }
+    if (Math.random() < spawnRate) spawnEnemy();
+    if (Math.random() < 0.003 && items.length < 3) spawnItem();
+    if (score > 0 && score % 100 === 0) { level++; enemySpeed += 0.15; spawnRate = Math.min(0.04, spawnRate + 0.002); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onMove(e) {
+    if (!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    player.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    player.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); enemies = []; items = []; score = 0; level = 1; player.hp = 100; player.x = canvas.width / 2; player.y = canvas.height / 2;
+    enemySpeed = 0.8; spawnRate = 0.01; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerdown', onMove);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

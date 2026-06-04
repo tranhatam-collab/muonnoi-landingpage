@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Tưới nước cho cây lớn không ngừng.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuoi Cay — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #grow-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 50vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #grow-bar { max-width: 300px; margin: 0.5rem auto; height: 12px; background: #1f2937; border-radius: 6px; overflow: hidden; border: 1px solid #374151; }
+  #grow-fill { height: 100%; width: 0%; background: #3b82f6; transition: width 0.2s; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="nuoi-cay">
+
+<div id="hud-root"></div>
+<div id="grow-bar"><div id="grow-fill"></div></div>
+<canvas id="grow-canvas" width="300" height="280" aria-label="Grow canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Nuoi Cay</h1>
+    <p>Cham để tưới nước. Cay lớn = nhiều diem. De khó = thua!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'nuoi-cay';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Nuoi Cay', desc: 'Cham màn hinh để tưới nước. Cay lớn khi có du nuoc. De cây khó quá lau se heo.' },
+      { title: 'Cay lon', desc: 'Cay càng lớn can càng nhiều nước va khó càng nhanh. Quan ly thời gian tuoi!' },
+      { title: 'Vô hạn', desc: 'Không có giới hạn chiều cao. Nuoi càng cao càng tốt!' },
+    ],
+    en: [
+      { title: 'Grow Tree', desc: 'Tap to water the tree. It grows when watered. Let ít dry too long and ít wilts.' },
+      { title: 'Taller = Thirstier', desc: 'The taller, the more water needed and faster ít dries. Manage timing!' },
+      { title: 'Endless', desc: 'No height limit. Grow as tall as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('grow-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const fillEl = document.getElementById('grow-fill');
+
+  let tree = { h: 20, water: 50, maxW: 100, potX: 0, potY: 0 }, score = 0, level = 1, isPlaying = false;
+  let dryRate = 0.2, growRate = 0.3, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 400); const maxH = Math.min(window.innerHeight * 0.45, 400); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); tree.potX = canvas.width / 2; tree.potY = canvas.height - 30; }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Ground
+    ctx.fillStyle = '#1f2937'; ctx.fillRect(0, tree.potY + 20, canvas.width, canvas.height - tree.potY - 20);
+    // Pot
+    ctx.fillStyle = '#8b5cf6'; ctx.fillRect(tree.potX - 18, tree.potY, 36, 20);
+    // Trunk
+    ctx.fillStyle = '#a16207'; ctx.fillRect(tree.potX - 4, tree.potY - tree.h, 8, tree.h);
+    // Leaves
+    const leafR = Math.min(30, 10 + tree.h * 0.15);
+    ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(tree.potX, tree.potY - tree.h, leafR, 0, Math.PI * 2); ctx.fill();
+    // Water drop animation
+    if (isPlaying && Math.random() < 0.1) {
+      ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(tree.potX + (Math.random() - 0.5) * 20, tree.potY - 30 - Math.random() * tree.h, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    tree.water -= dryRate;
+    if (tree.water > 30) { tree.h += growRate; score += Math.floor(growRate); }
+    if (tree.water <= 0) { endGame(); return; }
+    fillEl.style.width = Math.max(0, tree.water) + '%';
+    fillEl.style.background = tree.water > 60 ? '#3b82f6' : tree.water > 30 ? '#f59e0b' : '#ef4444';
+    if (tree.h > level * 60) { level++; dryRate += 0.05; growRate += 0.1; tree.maxW = Math.min(100, tree.maxW + 5); hud.setLevel(level); }
+    hud.setScore(score); draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap() { if (!isPlaying) return; tree.water = Math.min(tree.maxW, tree.water + 15); }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); tree.h = 20; tree.water = 50; tree.maxW = 100; score = 0; level = 1; dryRate = 0.2; growRate = 0.3; isPlaying = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Chơi cờ vua 5x5 với AI. Chiếu bí để thắng.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cờ Vua Mini</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .chess-grid { display:grid; grid-template-columns:repeat(5, 52px); grid-template-rows:repeat(5, 52px); gap:1px; background:#475569; padding:2px; border-radius:0.25rem; }
+  .chess-cell { width:52px; height:52px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; cursor:pointer; }
+  .chess-cell.light { background:#cbd5e1; color:#0f172a; }
+  .chess-cell.dark { background:#1e293b; color:#e2e8f0; }
+  .chess-cell.selected { box-shadow:inset 0 0 0 3px #3b82f6; }
+  .chess-cell.valid { background:#22c55e66; }
+  #status { margin-top:0.5rem; font-size:0.875rem; color:#94a3b8; }
+</style>
+</head>
+<body data-game="co-vua-mini">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="chess-grid" id="chess-grid"></div>
+  <div id="status">Nhấn Bắt đầu</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Cờ Vua Mini</h1>
+    <p>Bàn cờ 5x5. Chỉ có Vua. Di chuyển 1 ô 8 hướng. Chiếu bí AI là thắng!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'co-vua-mini';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Cờ Vua Mini', desc: 'Bàn 5x5. Bạn và AI mỗi bên 1 Vua (♔ và ♚).' },
+      { title: 'Di chuyển', desc: 'Vua có thể đi 1 ô theo 8 hướng (ngang, dọc, chéo).' },
+      { title: 'Chiếu bí', desc: 'Nếu Vua của AI không còn nước đi hợp lệ nào, bạn thắng!' },
+    ],
+    en: [
+      { title: 'Mini Chess', desc: 'A 5x5 board. You and AI each have one King (♔ and ♚).' },
+      { title: 'Moves', desc: 'King can move 1 square in any of 8 directions (horizontal, vertical, diagonal).' },
+      { title: 'Checkmate', desc: 'If the AI King has no legal moves, you win!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const gridEl = document.getElementById('chess-grid');
+  const statusEl = document.getElementById('status');
+
+  const SIZE = 5;
+  let board = [], isPlaying = false, playerTurn = true, selected = -1, score = 0, level = 1;
+
+  function reset() {
+    board = new Array(SIZE * SIZE).fill('');
+    board[0] = '♚'; // AI king top-left
+    board[SIZE*SIZE-1] = '♔'; // Player king bottom-right
+    render();
+  }
+
+  function render() {
+    gridEl.innerHTML = '';
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const r = Math.floor(i / SIZE), c = i % SIZE;
+      const cell = document.createElement('div');
+      cell.className = 'chess-cell' + ((r + c) % 2 === 0 ? ' light' : ' dark');
+      cell.textContent = board[i];
+      if (i === selected) cell.classList.add('selected');
+      cell.addEventListener('click', () => onClick(i));
+      gridEl.appendChild(cell);
+    }
+  }
+
+  function getMoves(idx, ch) {
+    const r = Math.floor(idx / SIZE), c = idx % SIZE;
+    const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    const moves = [];
+    for (const [dr,dc] of dirs) {
+      const rr = r + dr, cc = c + dc;
+      if (rr < 0 || rr >= SIZE || cc < 0 || cc >= SIZE) continue;
+      const ni = rr * SIZE + cc;
+      if (!board[ni] || isOpponent(board[ni], ch)) moves.push(ni);
+    }
+    return moves;
+  }
+
+  function isOpponent(a, b) {
+    const pa = a.charCodeAt(0) >= 9812 && a.charCodeAt(0) <= 9817; // white pieces
+    const pb = b.charCodeAt(0) >= 9812 && b.charCodeAt(0) <= 9817;
+    return pa !== pb;
+  }
+
+  function hasAnyMove(ch) {
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      if (board[i] && (ch === '♔' ? board[i] === '♔' : board[i] === '♚')) {
+        if (getMoves(i, board[i]).length > 0) return true;
+      }
+    }
+    return false;
+  }
+
+  function onClick(i) {
+    if (!isPlaying || !playerTurn) return;
+    const myKing = '♔';
+    if (selected === -1) {
+      if (board[i] === myKing) { selected = i; render(); }
+      return;
+    }
+    if (board[i] === myKing) { selected = i; render(); return; }
+    const moves = getMoves(selected, myKing);
+    if (!moves.includes(i)) { selected = -1; render(); return; }
+    board[i] = myKing; board[selected] = ''; selected = -1; render();
+    if (!hasAnyMove('♚')) { endGame(true); return; }
+    playerTurn = false;
+    statusEl.textContent = LANG === 'vi' ? 'AI đang suy nghĩ...' : 'AI thinking...';
+    setTimeout(aiMove, 400);
+  }
+
+  function aiMove() {
+    if (!isPlaying) return;
+    const aiKing = '♚';
+    let from = -1, moves = [];
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      if (board[i] === aiKing) {
+        const m = getMoves(i, aiKing);
+        if (m.length > 0) { from = i; moves = m; break; }
+      }
+    }
+    if (from === -1 || moves.length === 0) { endGame(false); return; }
+    const to = moves[Math.floor(Math.random() * moves.length)];
+    board[to] = aiKing; board[from] = '';
+    render();
+    if (!hasAnyMove('♔')) { endGame(false); return; }
+    playerTurn = true;
+    statusEl.textContent = LANG === 'vi' ? 'Lượt của bạn' : 'Your turn';
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; level = 1; isPlaying = true; playerTurn = true; selected = -1;
+    hud.setScore(0); hud.setLevel(1);
+    reset();
+    statusEl.textContent = LANG === 'vi' ? 'Lượt của bạn' : 'Your turn';
+  }
+
+  function endGame(playerWin) {
+    isPlaying = false;
+    if (playerWin) { score += level * 100; hud.setScore(score); level++; hud.setLevel(level); }
+    statusEl.textContent = playerWin ? (LANG === 'vi' ? 'Bạn thắng!' : 'You win!') : (LANG === 'vi' ? 'AI thắng!' : 'AI wins!');
+    PlaysSDK.saveScore(GAME_ID, score, { level });
+    setTimeout(() => {
+      PlaysSDK.showGameOver(GAME_ID, score, { level }, () => { if (playerWin) { reset(); isPlaying = true; playerTurn = true; statusEl.textContent = LANG === 'vi' ? 'Lượt của bạn' : 'Your turn'; } else { location.reload(); } });
+    }, 600);
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+})();
+</script>
+</body>
+</html>

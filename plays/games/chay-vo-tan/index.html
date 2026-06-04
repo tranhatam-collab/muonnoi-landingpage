@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Nhảy và né chướng ngại vật không ngừng.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chay Vo Tan — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #run-canvas { display: block; margin: 1rem auto; max-width: 90vw; max-height: 55vh; background: #111827; border: 1px solid #374151; border-radius: 6px; touch-action: none; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="chay-vo-tan">
+
+<div id="hud-root"></div>
+<canvas id="run-canvas" width="320" height="240" aria-label="Run canvas"></canvas>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Chay Vo Tan</h1>
+    <p>Nhay va né chướng ngại vat. Cang chạy càng nhanh!</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'chay-vo-tan';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Chay Vo Tan', desc: 'Nhan màn hinh để nhảy quá các chướng ngại vat. Cham vật can là thua.' },
+      { title: 'Tốc độ tăng', desc: 'Cang chạy nhanh càng nhiều diem. Chuong ngai vật xuất hiện gan nhau hon.' },
+      { title: 'Vô hạn', desc: 'Khong có địch den. Chay càng xa càng tốt!' },
+    ],
+    en: [
+      { title: 'Infinite Run', desc: 'Tap screen to jump over obstacles. Hit ăn obstacle and game over.' },
+      { title: 'Speed Up', desc: 'The faster you run, the more points. Obstacles appear closer together.' },
+      { title: 'Endless', desc: 'No destination. Run as far as you can!' },
+    ],
+  };
+  const canvas = document.getElementById('run-canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+
+  let player = { x: 40, y: 0, vy: 0, onGround: true, size: 16 };
+  let obstacles = [], score = 0, level = 1, isPlaying = false;
+  let groundY = 0, speed = 4, gravity = 0.6, jumpPower = -10, spawnDist = 200, animId = null;
+
+  function resize() { const maxW = Math.min(window.innerWidth * 0.9, 480); const maxH = Math.min(window.innerHeight * 0.45, 300); canvas.width = Math.floor(maxW); canvas.height = Math.floor(maxH); groundY = canvas.height - 40; player.y = groundY - player.size; }
+
+  function spawnObs() {
+    const h = 20 + Math.random() * 30;
+    obstacles.push({ x: canvas.width, y: groundY - h, w: 20 + Math.random() * 15, h });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Ground
+    ctx.fillStyle = '#374151'; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+    // Player
+    ctx.fillStyle = '#f59e0b'; ctx.fillRect(player.x, player.y, player.size, player.size);
+    // Obstacles
+    ctx.fillStyle = '#ef4444';
+    for (const ô of obstacles) ctx.fillRect(o.x, o.y, o.w, o.h);
+  }
+
+  function update() {
+    if (!isPlaying) return;
+    // Physics
+    player.vy += gravity; player.y += player.vy;
+    if (player.y >= groundY - player.size) { player.y = groundY - player.size; player.vy = 0; player.onGround = true; }
+    // Obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const ô = obstacles[i]; o.x -= speed;
+      if (o.x + o.w < 0) { obstacles.splice(i, 1); score += 10; continue; }
+      // Collision
+      if (player.x < o.x + o.w && player.x + player.size > o.x && player.y < o.y + o.h && player.y + player.size > o.y) { endGame(); return; }
+    }
+    // Spawn
+    if (!obstacles.length || canvas.width - obstacles[obstacles.length - 1].x > spawnDist) spawnObs();
+    // Level up
+    if (score > 0 && score % 100 === 0) { level++; speed = Math.min(12, speed + 0.4); spawnDist = Math.max(80, spawnDist - 8); hud.setLevel(level); }
+    hud.setScore(score);
+    draw(); animId = requestAnimationFrame(update);
+  }
+
+  function onTap() {
+    if (!isPlaying || !player.onGround) return;
+    player.vy = jumpPower; player.onGround = false;
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    resize(); obstacles = []; score = 0; level = 1; speed = 4; spawnDist = 200; isPlaying = true;
+    player.y = groundY - player.size; player.vy = 0; player.onGround = true;
+    hud.setScore(0); hud.setLevel(1); update();
+  }
+
+  function endGame() {
+    isPlaying = false; cancelAnimationFrame(animId);
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  canvas.addEventListener('pointerdown', onTap);
+  document.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'ArrowUp') onTap(); });
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+  window.addEventListener('resize', () => { if (isPlaying) { resize(); draw(); } });
+})();
+</script>
+</body>
+</html>

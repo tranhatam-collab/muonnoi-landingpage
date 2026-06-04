@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Chiếm lãnh thổ từ đối thủ AI.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mo Rong Lanh Tho — plays.muonnoi.org</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  #territory-grid { display: grid; gap: 2px; margin: 1rem auto; max-width: 340px; touch-action: none; }
+  .t-cell { aspect-ratio: 1; border-radius: 4px; background: #1f2937; border: 1px solid #374151; cursor: pointer; transition: background 0.2s; }
+  .t-cell.ally { background: #3b82f6; }
+  .t-cell.enemy { background: #ef4444; }
+  .t-cell.neutral { background: #f59e0b; }
+  #start-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 50; }
+  #start-overlay.hidden { display: none; }
+  .start-box { text-align: center; padding: 2rem; background: #111827; border-radius: 12px; border: 1px solid #374151; max-width: 320px; }
+  .start-box h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .start-box p { color: #9ca3af; margin-bottom: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body data-game="mo-rong-lanh-tho">
+
+<div id="hud-root"></div>
+<div id="territory-grid"></div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Mo Rong Lanh Tho</h1>
+    <p>Chiếm lãnh thổ từ đối thủ AI. Làn càng nhiều, càng mạnh.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'mo-rong-lanh-tho';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Mở Rộng Lãnh Thổ', desc: 'Lưới 6x6. Ô XANH DƯƠNG là bạn, Ô ĐỎ là địch, Ô VÀNG là trung lập. Chạm ô vàng hoặc đỏ liền kề với ô xanh để chiếm.' },
+      { title: 'Chiến thuật', desc: 'Mỗi lượt AI cũng chiếm 1 ô. Chiếm ô có nhiều hàng xóm xanh để mở rộng nhanh.' },
+      { title: 'Vô hạn', desc: 'Không có màn cuối. Càng chơi AI càng mạnh. Chiếm nhiều nhất có thể!' },
+    ],
+    en: [
+      { title: 'Territory', desc: '6x6 grid. BLUE = yours, RED = enemy, YELLOW = neutral. Tap neutral or red adjacent to blue to claim.' },
+      { title: 'Strategy', desc: 'Each turn AI also claims 1 cell. Claim cells with many blue neighbors to expand fast.' },
+      { title: 'Endless', desc: 'No final level. AI gets stronger over time. Claim as much as you can!' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: true });
+  const board = document.getElementById('territory-grid');
+  let size = 6, grid = [], score = 0, level = 1, turns = 0, isPlaying = false;
+
+  function genGrid() {
+    const g = [];
+    for (let y = 0; y < size; y++) {
+      const row = [];
+      for (let x = 0; x < size; x++) {
+        const r = Math.random();
+        row.push({ x, y, type: r < 0.5 ? 'neutral' : (r < 0.75 ? 'enemy' : 'ally'), claimed: false });
+      }
+      g.push(row);
+    }
+    g[0][0] = { x: 0, y: 0, type: 'ally', claimed: true };
+    g[size-1][size-1] = { x: size-1, y: size-1, type: 'enemy', claimed: true };
+    return g;
+  }
+
+  function build() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const cell = document.createElement('div');
+        const g = grid[y][x];
+        cell.className = 't-cell' + (g.type === 'ally' ? ' ally' : g.type === 'enemy' ? ' enemy' : ' neutral');
+        cell.dataset.x = x; cell.dataset.y = y;
+        cell.addEventListener('pointerdown', () => onTap(x, y));
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  function updateCell(x, y) {
+    const c = board.children[y * size + x];
+    const g = grid[y][x];
+    c.className = 't-cell' + (g.type === 'ally' ? ' ally' : g.type === 'enemy' ? ' enemy' : ' neutral');
+  }
+
+  function isAdjacent(x1, y1, x2, y2) { return Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1; }
+
+  function onTap(x, y) {
+    if (!isPlaying) return;
+    const g = grid[y][x];
+    if (g.type === 'ally') return;
+    // Must be adjacent to ally
+    let hasAllyNeighbor = false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = x + dx, ny = y + dy;
+      if (nx >= 0 && nx < size && ny >= 0 && ny < size && grid[ny][nx].type === 'ally') hasAllyNeighbor = true;
+    }
+    if (!hasAllyNeighbor) return;
+    g.type = 'ally'; score += (g.type === 'enemy' ? 15 : 5); updateCell(x, y);
+    turns++; if (turns % 10 === 0) { level++; size = Math.min(size + 1, 8); grid = genGrid(); build(); hud.setLevel(level); }
+    else aiTurn();
+    hud.setScore(score);
+  }
+
+  function aiTurn() {
+    const enemies = [];
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (grid[y][x].type === 'enemy') enemies.push({ x, y });
+    if (!enemies.length) return;
+    const e = enemies[Math.floor(Math.random() * enemies.length)];
+    const targets = [];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = e.x + dx, ny = e.y + dy;
+      if (nx >= 0 && nx < size && ny >= 0 && ny < size && (grid[ny][nx].type === 'neutral' || grid[ny][nx].type === 'ally')) targets.push({ x: nx, y: ny });
+    }
+    if (targets.length) { const t = targets[Math.floor(Math.random() * targets.length)]; grid[t.y][t.x].type = 'enemy'; updateCell(t.x, t.y); }
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    size = 6; grid = genGrid(); score = 0; level = 1; turns = 0; isPlaying = true;
+    build(); hud.setScore(0); hud.setLevel(1);
+  }
+
+  function endGame() {
+    isPlaying = false;
+    const prev = PlaysSDK.getGuestScores(GAME_ID);
+    const best = Math.max(score, prev.best);
+    PlaysSDK.saveGuestScore(GAME_ID, score, level);
+    PlaysSDK.showGameOver({ gameId: GAME_ID, score, level, best, isNewBest: score === best && score > 0, token: null,
+      onRestart: () => { document.querySelector('.plays-gameover-overlay')?.remove(); startGame(); },
+      onBack: () => { location.href = '../../'; },
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.buildTutorial({ steps: TUTORIAL_STEPS[LANG] || TUTORIAL_STEPS.vi, onFinish: () => {}, onClose: () => {} }).open();
+  });
+})();
+</script>
+</body>
+</html>

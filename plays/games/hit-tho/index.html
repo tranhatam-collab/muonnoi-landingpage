@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Theo nhịp hít thở để thư giãn. Không tính điểm, chỉ tĩnh tâm.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hít Thở</title>
+<link rel="stylesheet" href="../../styles/plays.css">
+<style>
+  body { background:#0f172a; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
+  #game-root { width:320px; min-height:360px; background:#1e293b; border-radius:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:1rem; position:relative; overflow:hidden; padding:1rem; }
+  .breath-circle { width:180px; height:180px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center; font-size:1.25rem; font-weight:bold; transition:transform 4s ease-in-out, background 1s; }
+  .breath-circle.inhale { transform:scale(1.4); background:#22c55e; }
+  .breath-circle.exhale { transform:scale(1); background:#3b82f6; }
+  .breath-label { margin-top:1.5rem; font-size:1rem; color:#94a3b8; }
+  .streak { margin-top:0.5rem; font-size:0.875rem; color:#eab308; }
+</style>
+</head>
+<body data-game="hit-tho">
+
+<div id="hud-root"></div>
+<div id="game-root">
+  <div class="breath-circle" id="circle">Nhấn</div>
+  <div class="breath-label" id="label">Nhấn khi vòng tròn phóng to để hít vào</div>
+  <div class="streak" id="streak">Streak: 0</div>
+</div>
+
+<div id="start-overlay">
+  <div class="start-box">
+    <h1>Hít Thở</h1>
+    <p>Theo nhịp vòng tròn. Nhấn đúng lúc phóng to (hít) và thu nhỏ (thở) để giữ streak.</p>
+    <button class="plays-btn plays-btn-primary" id="btn-start">Nhấn để bắt đầu</button>
+    <button class="plays-btn plays-btn-ghost" id="btn-tutorial">Hướng dẫn</button>
+  </div>
+</div>
+
+<script src="../../plays-sdk.js"></script>
+<script>
+(function() {
+  'use strict';
+  const GAME_ID = 'hit-tho';
+  const LANG = document.documentElement.lang === 'en' ? 'en' : 'vi';
+  const TUTORIAL_STEPS = {
+    vi: [
+      { title: 'Hít Thở', desc: 'Vòng tròn sẽ phóng to trong 4 giây rồi thu nhỏ trong 4 giây.' },
+      { title: 'Nhịp chuẩn', desc: 'Nhấn đúng lúc bắt đầu phóng to để hít vào, và đúng lúc bắt đầu thu nhỏ để thở ra.' },
+      { title: 'Thư giãn', desc: 'Không game over. Chỉ cần tĩnh tâm và giữ streak càng lâu càng tốt.' },
+    ],
+    en: [
+      { title: 'Breath Zen', desc: 'The circle expands for 4s then contracts for 4s.' },
+      { title: 'Timing', desc: 'Tap right as expansion starts to inhale, and as contraction starts to exhale.' },
+      { title: 'Relax', desc: 'No game over. Just breathe and keep your streak as long as you can.' },
+    ],
+  };
+  const hud = PlaysSDK.createHud('hud-root', { showLevel: false });
+  const circle = document.getElementById('circle');
+  const label = document.getElementById('label');
+  const streakEl = document.getElementById('streak');
+
+  let score = 0, streak = 0, phase = 'idle', cycle = 0, isPlaying = false, timer = null;
+
+  function setPhase(p) {
+    phase = p;
+    if (p === 'inhale') {
+      circle.className = 'breath-circle inhale';
+      circle.textContent = LANG === 'vi' ? 'Hít vào' : 'Inhale';
+      label.textContent = LANG === 'vi' ? 'Nhấn khi bắt đầu phóng to' : 'Tap when expansion starts';
+    } else {
+      circle.className = 'breath-circle exhale';
+      circle.textContent = LANG === 'vi' ? 'Thở ra' : 'Exhale';
+      label.textContent = LANG === 'vi' ? 'Nhấn khi bắt đầu thu nhỏ' : 'Tap when contraction starts';
+    }
+  }
+
+  function nextCycle() {
+    if (!isPlaying) return;
+    cycle++;
+    setPhase('inhale');
+    timer = setTimeout(() => {
+      if (!isPlaying) return;
+      setPhase('exhale');
+      timer = setTimeout(nextCycle, 4000);
+    }, 4000);
+  }
+
+  function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    score = 0; streak = 0; cycle = 0; isPlaying = true;
+    hud.setScore(0);
+    streakEl.textContent = 'Streak: 0';
+    setPhase('inhale');
+    timer = setTimeout(() => { if (isPlaying) { setPhase('exhale'); timer = setTimeout(nextCycle, 4000); } }, 4000);
+  }
+
+  function endGame() {
+    isPlaying = false;
+    clearTimeout(timer);
+    circle.className = 'breath-circle';
+    circle.textContent = 'Done';
+    label.textContent = LANG === 'vi' ? 'Thư giãn hoàn tất' : 'Session complete';
+    PlaysSDK.saveScore(GAME_ID, score, { streak });
+    PlaysSDK.showGameOver(GAME_ID, score, { streak }, () => { location.reload(); });
+  }
+
+  circle.addEventListener('click', () => {
+    if (!isPlaying) return;
+    if (phase === 'inhale') {
+      streak++; score += streak * 10;
+      hud.setScore(score); streakEl.textContent = 'Streak: ' + streak;
+    } else {
+      streak = 0; score = Math.max(0, score - 50);
+      hud.setScore(score); streakEl.textContent = 'Streak: ' + streak;
+    }
+  });
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-tutorial').addEventListener('click', () => {
+    PlaysSDK.showTutorial(GAME_ID, TUTORIAL_STEPS[LANG]);
+  });
+
+  // Endless — user can stop manually or play for a set duration (5 min)
+  setTimeout(endGame, 300000); // 5 min session
+})();
+</script>
+</body>
+</html>
